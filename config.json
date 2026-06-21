@@ -3,7 +3,7 @@
   "pin": "3007",
   "appPassword": "Solferino5!",
   "prixCarb": 2,
-  "seuil": 350,
+  "seuil": 200,
   "seuilTrajet": 220,
   "hotel": 95,
   "margeInstall": 15,
