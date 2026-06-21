@@ -368,6 +368,8 @@
     .comm-tab     { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:6px 14px; font-size:12px; font-family:DM Mono,monospace; color:var(--text2); cursor:pointer; transition:all .15s; }
     .comm-tab.active { background:rgba(139,92,246,.1); border-color:rgba(139,92,246,.35); color:#a78bfa; font-weight:600; }
   </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 </head>
 <body>
 
@@ -1669,7 +1671,8 @@ function buildSimulatorHTML(ns) {
   h +=       "</div>";
   h +=       "<div class=\"dist-result\" id=\"" + n + "-dist-result\">";
   h +=         "<div class=\"spinner\" id=\"" + n + "-dist-spinner\"></div>";
-  h +=         "<span id=\"" + n + "-dist-text\"></span></div></div>";
+  h +=         "<span id=\"" + n + "-dist-text\"></span></div>";
+  h +=       "<div id=\"" + n + "-map\" style=\"display:none;height:220px;border-radius:var(--radius-lg);margin-top:10px;overflow:hidden;border:1px solid var(--border);\"></div></div>";
   h +=     "<div class=\"field-row\">";
   h +=       "<div><div class=\"frl\">Distance aller-retour</div><div class=\"frh\">Calcul&eacute;e auto ou saisie manuelle</div></div>";
   h +=       "<div class=\"frr\"><input type=\"number\" class=\"inline-num\" id=\"" + n + "-distance\" value=\"0\" min=\"0\" max=\"4000\" step=\"10\" oninput=\"onDistChange(&apos;" + n + "&apos;)\">";
@@ -2135,6 +2138,45 @@ function onProjTechChange() {
 function onProjDistChange()   { projNuitsManuelles = false; calcProjet(); }
 function onProjRecalcNuits()  { projNuitsManuelles = false; mesPrixManuel = false; calcProjet(); }
 function onProjNuitsManual()  { projNuitsManuelles = true;  calcProjet(); }
+
+// Géométrie complète de l'itinéraire (pour affichage carte)
+async function routeGeometry(fLat,fLon,tLat,tLon) {
+  const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${fLon},${fLat};${tLon},${tLat}?overview=full&geometries=geojson`);
+  const d = await r.json();
+  if (d.code!=='Ok') throw new Error();
+  return d.routes[0].geometry.coordinates; // [[lon,lat], ...]
+}
+
+var _routeMapInstances = {}; // { containerId: L.Map }
+function showRouteMap(containerId, oriLat, oriLon, dstLat, dstLon, coords, baseLabel, addrLabel) {
+  var el = $(containerId);
+  if (!el || typeof L === 'undefined') return;
+  el.style.display = 'block';
+
+  if (!_routeMapInstances[containerId]) {
+    _routeMapInstances[containerId] = L.map(containerId, { zoomControl:true, attributionControl:true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap'
+    }).addTo(_routeMapInstances[containerId]);
+  }
+  var map = _routeMapInstances[containerId];
+  map.eachLayer(function(layer){
+    if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
+  });
+
+  var latlngs = coords.map(function(c){ return [c[1], c[0]]; });
+  var polyline = L.polyline(latlngs, { color:'#0F9ED5', weight:4, opacity:0.85 }).addTo(map);
+
+  var origIcon = L.divIcon({ className:'', html:'<div style="width:14px;height:14px;border-radius:50%;background:#6db88a;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.2);"></div>', iconSize:[14,14] });
+  var destIcon = L.divIcon({ className:'', html:'<div style="width:14px;height:14px;border-radius:50%;background:#f43f5e;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.2);"></div>', iconSize:[14,14] });
+
+  L.marker([oriLat, oriLon], { icon: origIcon }).addTo(map).bindPopup('Départ : ' + (baseLabel||''));
+  L.marker([dstLat, dstLon], { icon: destIcon }).addTo(map).bindPopup('Client : ' + (addrLabel||''));
+
+  map.fitBounds(polyline.getBounds(), { padding:[24,24] });
+  setTimeout(function(){ map.invalidateSize(); }, 100);
+}
 
 async function calculerDistanceProjet() {
   var addr = $('proj-adresse').value.trim();
@@ -2936,6 +2978,10 @@ async function calculerDistance(ns) {
     const dhLabel = dh < 1 ? Math.round(dh*60)+' min' : dh.toFixed(1).replace('.0','')+'h';
     $(`${ns}-dist-text`).textContent=`✓  ${ar} km AR — ${Math.round(km)} km × 2 — ${dhLabel} de route AR (depuis ${base.split(',')[0]})`;
     calcPage(ns);
+    try {
+      const coords = await routeGeometry(ori.lat, ori.lon, dst.lat, dst.lon);
+      showRouteMap(`${ns}-map`, ori.lat, ori.lon, dst.lat, dst.lon, coords, base, addr);
+    } catch(mapErr) { /* la carte est secondaire — on n'interrompt pas le calcul si elle échoue */ }
   } catch {
     res.className='dist-result err';
     $(`${ns}-dist-spinner`).style.display='none';
@@ -5236,7 +5282,7 @@ function initFunnel() {
 }
 
 // ── Version footer ──
-var APP_VERSION = 'v3.5';
+var APP_VERSION = 'v3.7';
 var APP_BUILD   = '2026-05-25';
 (function(){
   var el = document.getElementById('footer-version');
