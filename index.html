@@ -1594,7 +1594,7 @@ function buildSimulatorHTML(ns) {
   h +=   "<div class=\"card\">";
   h +=     "<div id=\"wrap-" + n + "-duree\" class=\"field-row\" style=\"padding-top:0;\">";
   h +=       "<div><div class=\"frl\">Dur&eacute;e d&apos;intervention</div><div class=\"frh\">Jours de travail chez le client</div></div>";
-  h +=       "<div class=\"frr\"><input type=\"number\" class=\"inline-num\" id=\"" + n + "-duree\" value=\"\" placeholder=\"0\" min=\"0\" max=\"10\" step=\"1\" oninput=\"recalcNuits(&apos;" + n + "&apos;);validateMaint(&apos;" + n + "&apos;)\">";
+  h +=       "<div class=\"frr\"><input type=\"number\" class=\"inline-num\" id=\"" + n + "-duree\" value=\"\" placeholder=\"0\" min=\"0\" max=\"10\" step=\"0.5\" oninput=\"recalcNuits(&apos;" + n + "&apos;);validateMaint(&apos;" + n + "&apos;)\">";
   h +=       "<span class=\"fru\">jour(s)</span></div></div>";
   h +=   "</div></div></div>";
 
@@ -5029,8 +5029,8 @@ function initFunnel() {
 }
 
 // ── Version footer ──
-var APP_VERSION = 'v1.2';
-var APP_BUILD   = '2026-05-24';
+var APP_VERSION = 'v1.3';
+var APP_BUILD   = '2026-05-25';
 (function(){
   var el = document.getElementById('footer-version');
   if (!el) return;
