@@ -4,7 +4,7 @@
   "appPassword": "Solferino5!",
   "prixCarb": 2,
   "seuil": 350,
-  "seuilTrajet": 150,
+  "seuilTrajet": 220,
   "hotel": 95,
   "margeInstall": 15,
   "tauxHeureTrajet": 76,
