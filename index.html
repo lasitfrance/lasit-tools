@@ -1394,7 +1394,7 @@
         <div class="cfg-sub-title">Tarification d&eacute;placement &amp; intervention</div>
         <div class="cfg-sub-body">
           <div class="field-row" style="padding-top:0;">
-            <div><div style="display:flex;align-items:center;gap:7px;"><span>🚗</span><div class="frl" style="font-size:12px;">Taux horaire d&eacute;placement</div></div><div class="frh">Facturation du trajet technicien, &agrave; l&apos;heure (arrondie &agrave; l&apos;heure sup&eacute;rieure)</div></div>
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>🚗</span><div class="frl" style="font-size:12px;">Taux horaire d&eacute;placement</div></div><div class="frh">Facturation du trajet technicien, au temps r&eacute;el (calcul d&apos;itin&eacute;raire)</div></div>
             <div class="frr"><input type="number" class="inline-num" id="cfg-taux-heure-trajet" value="76" min="0" max="500" step="1" oninput="saveConfig()"><span class="fru">€/h</span></div>
           </div>
           <div class="field-row">
@@ -1695,7 +1695,7 @@ function buildSimulatorHTML(ns) {
 
   // MO trajet — heures éditables (taux horaire fixe)
   h +=     "<div class=\"total-row\"><span class=\"trl\">Main d&apos;&oelig;uvre trajet &mdash; "
-  +          "<input type=\"number\" id=\"" + n + "-s-heurestrajet\" value=\"0\" min=\"0\" max=\"48\" step=\"1\" style=\"width:45px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--accent);font-family:DM Mono,monospace;font-size:13px;text-align:center;outline:none;\" oninput=\"onSyntheseManual(&apos;" + n + "&apos;,'heurestrajet')\">"
+  +          "<input type=\"number\" id=\"" + n + "-s-heurestrajet\" value=\"0\" min=\"0\" max=\"48\" step=\"0.1\" style=\"width:50px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--accent);font-family:DM Mono,monospace;font-size:13px;text-align:center;outline:none;\" oninput=\"onSyntheseManual(&apos;" + n + "&apos;,'heurestrajet')\">"
   +          " h"
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'heurestrajet')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-heurestrajet\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
@@ -2671,7 +2671,7 @@ function calcHeuresTrajetMaint(ns, dist) {
   var heures = (window._dureeTrajetAR && window._dureeTrajetAR[ns] != null)
     ? window._dureeTrajetAR[ns]
     : (dist / VITESSE_FALLBACK_KMH); // estimation si pas de calcul d'itinéraire effectué
-  return Math.ceil(heures); // arrondi à l'heure supérieure (1.8h → 2h)
+  return Math.round(heures * 100) / 100; // précision au centième d'heure (temps réel, pas d'arrondi à l'heure)
 }
 
 function calcNuitsAuto(dist, duree) {
@@ -2809,7 +2809,7 @@ function calcPage(ns) {
 
   // Mettre à jour les inputs inline si pas en mode manuel
   _autoUpdate = true;
-  if (!sm.heurestrajet && $(`${ns}-s-heurestrajet`)) $(`${ns}-s-heurestrajet`).value = heuresTrajetAuto;
+  if (!sm.heurestrajet && $(`${ns}-s-heurestrajet`)) $(`${ns}-s-heurestrajet`).value = Math.round(heuresTrajetAuto*100)/100;
   if (!sm.joursinterv && $(`${ns}-s-joursinterv`)) $(`${ns}-s-joursinterv`).value = duree%1===0 ? duree : duree.toFixed(1);
   if (!sm.nuits && $(`${ns}-s-nuits`)) $(`${ns}-s-nuits`).value = nuits;
   if (!sm.km    && $(`${ns}-s-km`))    $(`${ns}-s-km`).value    = Math.round(dist);
@@ -2819,9 +2819,8 @@ function calcPage(ns) {
 
   // Afficher les valeurs auto en référence (grisées)
   if ($(`${ns}-auto-heurestrajet`)) {
-    var heuresReelles = (window._dureeTrajetAR && window._dureeTrajetAR[ns] != null) ? window._dureeTrajetAR[ns] : (dist / VITESSE_FALLBACK_KMH);
-    var realLabel = heuresReelles < 1 ? Math.round(heuresReelles*60)+' min' : heuresReelles.toFixed(1).replace('.0','')+'h';
-    $(`${ns}-auto-heurestrajet`).textContent = sm.heurestrajet ? '(auto: '+heuresTrajetAuto+'h — réel '+realLabel+' AR)' : '';
+    var hAutoLabel = heuresTrajetAuto < 1 ? Math.round(heuresTrajetAuto*60)+' min' : heuresTrajetAuto.toFixed(2).replace(/0$/,'').replace(/\.$/,'')+'h';
+    $(`${ns}-auto-heurestrajet`).textContent = sm.heurestrajet ? '(auto: '+hAutoLabel+' AR — temps réel)' : '';
   }
   if ($(`${ns}-auto-joursinterv`)) $(`${ns}-auto-joursinterv`).textContent = sm.joursinterv ? '(auto: '+(duree%1===0?duree:duree.toFixed(1))+' j)' : '';
   if ($(`${ns}-auto-km`))    $(`${ns}-auto-km`).textContent    = sm.km    ? '(auto: '+Math.round(dist)+' km)' : '';
@@ -5237,7 +5236,7 @@ function initFunnel() {
 }
 
 // ── Version footer ──
-var APP_VERSION = 'v3.4';
+var APP_VERSION = 'v3.5';
 var APP_BUILD   = '2026-05-25';
 (function(){
   var el = document.getElementById('footer-version');
