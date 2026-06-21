@@ -184,11 +184,13 @@
     .cfg-block-header.mes  { background:rgba(15,158,213,.07); }
     .cfg-block-header.ship { background:rgba(192,132,252,.07); }
     .cfg-block-header.prix { background:rgba(249,115,22,.07); }
+    .cfg-block-header.commun { background:rgba(148,163,184,.07); }
     .cfg-block-icon { font-size:22px; flex-shrink:0; }
     .cfg-block-title { font-size:15px; font-weight:700; letter-spacing:-.01em; }
     .cfg-block-title.mes  { color:var(--accent); }
     .cfg-block-title.ship { color:#c084fc; }
     .cfg-block-title.prix { color:#f97316; }
+    .cfg-block-title.commun { color:#94a3b8; }
     .cfg-block-body { padding:20px 22px; display:flex; flex-direction:column; gap:22px; }
 
     /* ── Sub-section inside a big block ── */
@@ -1218,18 +1220,111 @@
   <!-- ══════════════════════════════════════════
        BLOC 1 — MISE EN SERVICE & MAINTENANCE
   ══════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════
+       BLOC — RÉGLAGES COMMUNS (utilisés par Maintenance ET Prix Machine)
+  ══════════════════════════════════════════ -->
   <div class="cfg-block">
-    <div class="cfg-block-header mes">
-      <div class="cfg-block-icon">🔧⚙️</div>
+    <div class="cfg-block-header commun">
+      <div class="cfg-block-icon">🚗</div>
       <div>
-        <div class="cfg-block-title mes">Mise en Service &amp; Maintenance</div>
+        <div class="cfg-block-title commun">Réglages communs</div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Utilisés par les deux calculateurs (Maintenance + Prix Machine)</div>
       </div>
     </div>
     <div class="cfg-block-body">
 
-      <!-- Sous-section : Techniciens -->
+      <!-- Sous-section : Techniciens (noms + base) -->
       <div class="cfg-sub">
-        <div class="cfg-sub-title">Techniciens &amp; véhicules</div>
+        <div class="cfg-sub-title">Techniciens &amp; base de d&eacute;part</div>
+        <div class="cfg-sub-body">
+          <div class="tcc-grid">
+            <div class="tcc-card">
+              <div class="tcc-header">
+                <div class="tcc-av">CT</div>
+                <div><div class="tcc-hname">Cisley TONI</div><div class="tcc-hsub">Technicien 1</div></div>
+              </div>
+              <div class="tcc-body">
+                <div class="tcc-row" style="align-items:flex-start;padding-top:9px;">
+                  <span class="tcc-lbl" style="padding-top:2px;">Base (départ)</span>
+                  <div style="flex:1;margin-left:12px;"><input type="text" class="tcc-num" id="cfg-cisley-base" value="49 chemin vert, Limonest, 69760" style="width:100%;font-size:11px;padding:4px 8px;" oninput="saveConfig()" placeholder="Adresse de départ"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:8px;">Salaire / leasing / p&eacute;ages / km : voir bloc &laquo; Mise en service &raquo; ci-dessous</div>
+              </div>
+            </div>
+            <div class="tcc-card">
+              <div class="tcc-header">
+                <div class="tcc-av pending">?</div>
+                <div><div class="tcc-hname" id="cfg-avenir-nom-display">À venir</div><div class="tcc-hsub">Technicien 2</div></div>
+                <input type="text" id="cfg-avenir-nom" placeholder="Nom du technicien" value="À venir" style="margin-top:6px;width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;padding:6px 10px;outline:none;" oninput="this.previousElementSibling.querySelector('.tcc-hname').textContent=this.value;saveConfig()">
+              </div>
+              <div class="tcc-body">
+                <div class="tcc-row" style="align-items:flex-start;padding-top:9px;">
+                  <span class="tcc-lbl" style="padding-top:2px;">Base (départ)</span>
+                  <div style="flex:1;margin-left:12px;"><input type="text" class="tcc-num" id="cfg-avenir-base" value="Angers, 49000" style="width:100%;font-size:11px;padding:4px 8px;" oninput="saveConfig()" placeholder="Adresse de départ"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:8px;">Salaire / leasing / p&eacute;ages / km : voir bloc &laquo; Mise en service &raquo; ci-dessous</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sous-section : Nuitées & hôtel -->
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">Nuit&eacute;es &amp; h&eacute;bergement</div>
+        <div class="cfg-sub-body">
+          <div class="field-row" style="padding-top:0;">
+            <div><div class="frl" style="font-size:12px;">Seuil nuit&eacute;e</div><div class="frh">Distance AR d&eacute;clenchant une nuit de trajet</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-seuil" value="350" min="50" max="1000" step="50" oninput="saveConfig()"><span class="fru">km AR</span></div>
+          </div>
+          <div class="field-row">
+            <div><div class="frl" style="font-size:12px;">Seuil trajet journ&eacute;e</div><div class="frh">Distance aller au-del&agrave; = trajet long (impacte le calcul de nuit&eacute;e)</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-seuil-trajet" value="150" min="50" max="500" step="25" oninput="saveConfig()"><span class="fru">km aller</span></div>
+          </div>
+          <div class="field-row">
+            <div><div class="frl" style="font-size:12px;">H&ocirc;tel / nuit</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-hotel" value="95" min="30" max="300" step="5" oninput="saveConfig()"><span class="fru">€/nuit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sous-section : Repas -->
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">Repas</div>
+        <div class="cfg-sub-body">
+          <div class="field-row" style="padding-top:0;">
+            <div><div class="frl" style="font-size:12px;">Petit-d&eacute;jeuner</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-pdj" value="15" min="5" max="50" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
+          </div>
+          <div class="field-row">
+            <div><div class="frl" style="font-size:12px;">D&eacute;jeuner</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-dej" value="20" min="5" max="80" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
+          </div>
+          <div class="field-row">
+            <div><div class="frl" style="font-size:12px;">D&icirc;ner</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-diner" value="30" min="5" max="100" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       BLOC — MISE EN SERVICE (Calculateur Prix Machine uniquement)
+  ══════════════════════════════════════════ -->
+  <div class="cfg-block">
+    <div class="cfg-block-header prix">
+      <div class="cfg-block-icon">⚙️</div>
+      <div>
+        <div class="cfg-block-title prix">Mise en service (Prix Machine)</div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Utilis&eacute; uniquement par le Calculateur Prix Machine</div>
+      </div>
+    </div>
+    <div class="cfg-block-body">
+
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">V&eacute;hicules &amp; co&ucirc;t employeur</div>
         <div class="cfg-sub-body">
           <div class="tcc-grid">
             <div class="tcc-card">
@@ -1240,101 +1335,85 @@
               <div class="tcc-body">
                 <div class="tcc-row"><span class="tcc-lbl">Salaire brut annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-salaire" value="50000" min="20000" max="200000" step="500" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
                 <div class="tcc-row"><span class="tcc-lbl">Leasing mensuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-leasing" value="882" min="200" max="3000" step="10" oninput="saveConfig()"><span class="tcc-unit">€/mois</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Péages annuels</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-peages" value="1800" min="0" max="5000" step="100" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Kilométrage annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-kman" value="60000" min="5000" max="100000" step="1000" oninput="saveConfig()"><span class="tcc-unit">km/an</span></div></div>
-                <div class="tcc-row" style="align-items:flex-start;padding-top:9px;">
-                  <span class="tcc-lbl" style="padding-top:2px;">Base (départ)</span>
-                  <div style="flex:1;margin-left:12px;"><input type="text" class="tcc-num" id="cfg-cisley-base" value="49 chemin vert, Limonest, 69760" style="width:100%;font-size:11px;padding:4px 8px;" oninput="saveConfig()" placeholder="Adresse de départ"></div>
-                </div>
+                <div class="tcc-row"><span class="tcc-lbl">P&eacute;ages annuels</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-peages" value="1800" min="0" max="5000" step="100" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
+                <div class="tcc-row"><span class="tcc-lbl">Kilom&eacute;trage annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-kman" value="60000" min="5000" max="100000" step="1000" oninput="saveConfig()"><span class="tcc-unit">km/an</span></div></div>
                 <div class="tcc-divider"></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût €/km calculé</span><span class="tcc-ik" id="cfg-cisley-ik">–</span></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût employeur/jour</span><span class="tcc-ik" id="cfg-cisley-jour">–</span></div>
+                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t €/km calcul&eacute;</span><span class="tcc-ik" id="cfg-cisley-ik">–</span></div>
+                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t employeur/jour</span><span class="tcc-ik" id="cfg-cisley-jour">–</span></div>
               </div>
             </div>
             <div class="tcc-card">
               <div class="tcc-header">
                 <div class="tcc-av pending">?</div>
-                <div><div class="tcc-hname" id="cfg-avenir-nom-display">À venir</div><div class="tcc-hsub">Technicien 2</div></div>
-                <input type="text" id="cfg-avenir-nom" placeholder="Nom du technicien" value="À venir" style="margin-top:6px;width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;padding:6px 10px;outline:none;" oninput="this.previousElementSibling.querySelector('.tcc-hname').textContent=this.value;saveConfig()">
+                <div><div class="tcc-hname">À venir</div><div class="tcc-hsub">Technicien 2</div></div>
               </div>
               <div class="tcc-body">
                 <div class="tcc-row"><span class="tcc-lbl">Salaire brut annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-salaire" value="50000" min="20000" max="200000" step="500" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
                 <div class="tcc-row"><span class="tcc-lbl">Leasing mensuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-leasing" value="750" min="200" max="3000" step="10" oninput="saveConfig()"><span class="tcc-unit">€/mois</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Péages annuels</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-peages" value="1800" min="0" max="5000" step="100" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Kilométrage annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-kman" value="60000" min="5000" max="100000" step="1000" oninput="saveConfig()"><span class="tcc-unit">km/an</span></div></div>
-                <div class="tcc-row" style="align-items:flex-start;padding-top:9px;">
-                  <span class="tcc-lbl" style="padding-top:2px;">Base (départ)</span>
-                  <div style="flex:1;margin-left:12px;"><input type="text" class="tcc-num" id="cfg-avenir-base" value="Angers, 49000" style="width:100%;font-size:11px;padding:4px 8px;" oninput="saveConfig()" placeholder="Adresse de départ"></div>
-                </div>
+                <div class="tcc-row"><span class="tcc-lbl">P&eacute;ages annuels</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-peages" value="1800" min="0" max="5000" step="100" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
+                <div class="tcc-row"><span class="tcc-lbl">Kilom&eacute;trage annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-kman" value="60000" min="5000" max="100000" step="1000" oninput="saveConfig()"><span class="tcc-unit">km/an</span></div></div>
                 <div class="tcc-divider"></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût €/km calculé</span><span class="tcc-ik" id="cfg-avenir-ik">–</span></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût employeur/jour</span><span class="tcc-ik" id="cfg-avenir-jour">–</span></div>
+                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t €/km calcul&eacute;</span><span class="tcc-ik" id="cfg-avenir-ik">–</span></div>
+                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t employeur/jour</span><span class="tcc-ik" id="cfg-avenir-jour">–</span></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Sous-section : Déplacement & repas -->
       <div class="cfg-sub">
-        <div class="cfg-sub-title">Déplacement &amp; repas</div>
-        <div class="cfg-sub-body">
-          <div class="cfg-grid-2">
-            <div>
-              <div style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:10px;letter-spacing:.06em;text-transform:uppercase;">Véhicule</div>
-              <div class="field-row" style="padding-top:0;">
-                <div><div class="frl" style="font-size:12px;">Prix SP95</div><div class="frh">Consommation fixe 7 L/100km</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-prix-carb" value="2" min="1.00" max="2.50" step="0.01" oninput="saveConfig()"><span class="fru">€/L</span></div>
-              </div>
-              <div class="field-row">
-                <div><div class="frl" style="font-size:12px;">Seuil nuitée</div><div class="frh">Distance AR déclenchant une nuit de trajet</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-seuil" value="350" min="50" max="1000" step="50" oninput="saveConfig()"><span class="fru">km AR</span></div>
-              </div>
-              <div class="field-row">
-                <div><div class="frl" style="font-size:12px;">Seuil trajet journée</div><div class="frh">Distance aller au-delà = 1 jour facturé</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-seuil-trajet" value="150" min="50" max="500" step="25" oninput="saveConfig()"><span class="fru">km aller</span></div>
-              </div>
-              <div class="field-row">
-                <div><div class="frl" style="font-size:12px;">Hôtel / nuit</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-hotel" value="95" min="30" max="300" step="5" oninput="saveConfig()"><span class="fru">€/nuit</span></div>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:10px;letter-spacing:.06em;text-transform:uppercase;">Repas</div>
-              <div class="field-row" style="padding-top:0;">
-                <div><div class="frl" style="font-size:12px;">Petit-déjeuner</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-pdj" value="15" min="5" max="50" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
-              </div>
-              <div class="field-row">
-                <div><div class="frl" style="font-size:12px;">Déjeuner</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-dej" value="20" min="5" max="80" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
-              </div>
-              <div class="field-row">
-                <div><div class="frl" style="font-size:12px;">Dîner</div></div>
-                <div class="frr"><input type="number" class="inline-num" id="cfg-diner" value="30" min="5" max="100" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sous-section : Marges -->
-      <div class="cfg-sub">
-        <div class="cfg-sub-title">Marges appliquées au Total intervention HT</div>
+        <div class="cfg-sub-title">Carburant &amp; marge</div>
         <div class="cfg-sub-body">
           <div class="field-row" style="padding-top:0;">
-            <div><div style="display:flex;align-items:center;gap:7px;"><span>🔧</span><div class="frl" style="font-size:12px;">Marge — Mise en service</div></div></div>
-            <div class="frr"><input type="number" class="inline-num" id="cfg-marge-install" value="15" min="0" max="100" step="5" oninput="saveConfig()"><span class="fru">%</span></div>
+            <div><div class="frl" style="font-size:12px;">Prix SP95</div><div class="frh">Consommation fixe 7 L/100km</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-prix-carb" value="2" min="1.00" max="2.50" step="0.01" oninput="saveConfig()"><span class="fru">€/L</span></div>
           </div>
           <div class="field-row">
-            <div><div style="display:flex;align-items:center;gap:7px;"><span>⚙️</span><div class="frl" style="font-size:12px;">Marge — Maintenance</div></div></div>
-            <div class="frr"><input type="number" class="inline-num" id="cfg-marge-maintenance" value="35" min="0" max="100" step="5" oninput="saveConfig()"><span class="fru">%</span></div>
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>🔧</span><div class="frl" style="font-size:12px;">Marge — Mise en service</div></div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-marge-install" value="15" min="0" max="100" step="5" oninput="saveConfig()"><span class="fru">%</span></div>
           </div>
         </div>
       </div>
 
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════
+       BLOC — MAINTENANCE (Calculateur Maintenance uniquement)
+  ══════════════════════════════════════════ -->
+  <div class="cfg-block">
+    <div class="cfg-block-header mes">
+      <div class="cfg-block-icon">🔧</div>
+      <div>
+        <div class="cfg-block-title mes">Maintenance</div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Utilis&eacute; uniquement par le Calculateur Maintenance &mdash; tarifs d&eacute;j&agrave; au prix de vente (sans marge suppl&eacute;mentaire)</div>
+      </div>
+    </div>
+    <div class="cfg-block-body">
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">Tarification d&eacute;placement &amp; intervention</div>
+        <div class="cfg-sub-body">
+          <div class="field-row" style="padding-top:0;">
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>🚗</span><div class="frl" style="font-size:12px;">Taux horaire d&eacute;placement</div></div><div class="frh">Facturation du trajet technicien, &agrave; l&apos;heure (arrondie &agrave; l&apos;heure sup&eacute;rieure)</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-taux-heure-trajet" value="76" min="0" max="500" step="1" oninput="saveConfig()"><span class="fru">€/h</span></div>
+          </div>
+          <div class="field-row">
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>⛽</span><div class="frl" style="font-size:12px;">Co&ucirc;t kilom&eacute;trique</div></div><div class="frh">€/km pour le transport (d&eacute;j&agrave; au prix de vente)</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-cout-km" value="0.98" min="0" max="10" step="0.01" oninput="saveConfig()"><span class="fru">€/km</span></div>
+          </div>
+          <div class="field-row">
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>📦</span><div class="frl" style="font-size:12px;">Forfait intervention &mdash; 1 jour</div></div><div class="frh">Prix de vente fixe pour une journ&eacute;e compl&egrave;te chez le client</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-forfait-interv-1j" value="784" min="0" max="10000" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
+          </div>
+          <div class="field-row">
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>📦</span><div class="frl" style="font-size:12px;">Forfait intervention &mdash; 0,5 jour</div></div><div class="frh">Prix de vente fixe pour une demi-journ&eacute;e chez le client</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-forfait-interv-05j" value="441" min="0" max="10000" step="1" oninput="saveConfig()"><span class="fru">€</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ══════════════════════════════════════════
        BLOC 2 — SHIPPING
@@ -1574,7 +1653,14 @@ function buildSimulatorHTML(ns) {
   h += "<div class=\"section\">";
   h +=   "<div class=\"section-label\">02 &mdash; Adresse du client</div>";
   h +=   "<div class=\"card\">";
-  h +=     "<div class=\"origin-badge\"><div class=\"origin-dot\"></div><span id=\"" + n + "-origin-label\">D&eacute;part : 49 chemin vert, Limonest</span></div>";
+  h +=     "<div class=\"origin-badge\" style=\"align-items:flex-start;gap:8px;\"><div class=\"origin-dot\" style=\"margin-top:5px;\"></div>"
+  +          "<div style=\"flex:1;\">"
+  +            "<div style=\"font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;\">D&eacute;part</div>"
+  +            "<input type=\"text\" id=\"" + n + "-origin-input\" value=\"49 chemin vert, Limonest, 69760\" oninput=\"onOriginManual(&apos;" + n + "&apos;)\" style=\"width:100%;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);font-size:13px;padding:2px 0;outline:none;font-family:inherit;\">"
+  +          "</div>"
+  +          "<button onclick=\"resetOrigin(&apos;" + n + "&apos;)\" title=\"Revenir à la base du technicien\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0;\">↺</button>"
+  +          " <span id=\"" + n + "-origin-auto-hint\" style=\"display:none;font-size:9px;color:var(--text3);\">●</span>"
+  +        "</div>";
   h +=     "<div id=\"wrap-" + n + "-adresse\" style=\"margin-bottom:12px;\">";
   h +=       "<div style=\"font-size:12px;font-weight:600;margin-bottom:6px;\" class=\"req-lbl\" id=\"lbl-" + n + "-adresse\">Adresse du client</div>";
   h +=       "<div class=\"addr-wrap\">";
@@ -1604,13 +1690,16 @@ function buildSimulatorHTML(ns) {
   h +=     "<div id=\"" + n + "-missing-msg\" style=\"display:none;padding:16px 22px;font-family:DM Mono,monospace;font-size:13px;color:var(--red);\">⚠ Donn&eacute;es manquantes</div>";
   h +=     "<div id=\"" + n + "-result-rows\">";
 
-  // MO row — jours éditables
-  h +=     "<div class=\"total-row\"><span class=\"trl\">Main d&apos;&oelig;uvre &mdash; "
-  +          "<input type=\"number\" id=\"" + n + "-s-jours\" value=\"0\" min=\"0\" max=\"30\" step=\"1\" style=\"width:40px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--accent);font-family:DM Mono,monospace;font-size:13px;text-align:center;outline:none;\" oninput=\"onSyntheseManual(&apos;" + n + "&apos;,'jours')\">"
-  +          " j"
-  +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'jours')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
-  +          " <span id=\"" + n + "-auto-jours\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
-  +        "</span><span class=\"trv\" id=\"" + n + "-lb-mo\">&ndash;</span></div>";
+  // ── FORFAIT DÉPLACEMENT ──
+  h +=     "<div style=\"padding:14px 22px 4px;font-size:11px;font-weight:700;color:var(--accent);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.06em;\">Forfait d&eacute;placement</div>";
+
+  // MO trajet — heures éditables (taux horaire fixe)
+  h +=     "<div class=\"total-row\"><span class=\"trl\">Main d&apos;&oelig;uvre trajet &mdash; "
+  +          "<input type=\"number\" id=\"" + n + "-s-heurestrajet\" value=\"0\" min=\"0\" max=\"48\" step=\"1\" style=\"width:45px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--accent);font-family:DM Mono,monospace;font-size:13px;text-align:center;outline:none;\" oninput=\"onSyntheseManual(&apos;" + n + "&apos;,'heurestrajet')\">"
+  +          " h"
+  +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'heurestrajet')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
+  +          " <span id=\"" + n + "-auto-heurestrajet\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
+  +        "</span><span class=\"trv\" id=\"" + n + "-lb-mo-trajet\">&ndash;</span></div>";
 
   // Transport row — km éditable
   h +=     "<div class=\"total-row\"><span class=\"trl\">Transport &mdash; "
@@ -1634,9 +1723,25 @@ function buildSimulatorHTML(ns) {
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'repas')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-repas\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
   +        "</span><span class=\"trv\" id=\"" + n + "-lb-repas\">&ndash;</span></div>";
-  h +=     "<div class=\"total-row\" style=\"background:var(--bg3);\"><span class=\"trl\" style=\"color:var(--text2);\">Co&ucirc;t interne</span><span class=\"trv\" style=\"font-size:14px;color:var(--text2);\" id=\"" + n + "-lb-soustotal\">&ndash;</span></div>";
-  h +=     "<div class=\"total-row\" style=\"background:var(--bg3);\"><span class=\"trl\" style=\"color:var(--green);\">Marge (<span id=\"" + n + "-lb-marge-pct\">&ndash;</span>%)</span><span class=\"trv\" style=\"font-size:14px;color:var(--green);\" id=\"" + n + "-lb-marge-eur\">&ndash;</span></div>";
-  h +=     "<div class=\"total-row main\"><span class=\"trl\">Total intervention HT</span><span class=\"trv\" id=\"" + n + "-lb-total\">&ndash;</span></div>";
+
+  h +=     "<div class=\"total-row\" style=\"background:var(--bg3);\"><span class=\"trl\" style=\"color:var(--text2);\">Co&ucirc;t frais (transport+h&eacute;b.+repas)</span><span class=\"trv\" style=\"font-size:13px;color:var(--text2);\" id=\"" + n + "-lb-soustotal-depl\">&ndash;</span></div>";
+  h +=     "<div class=\"total-row\" id=\"" + n + "-row-marge-frais\" style=\"background:var(--bg3);\"><span class=\"trl\" style=\"color:var(--green);font-size:12px;\">Marge frais (<span id=\"" + n + "-lb-marge-pct\">&ndash;</span>%)</span><span class=\"trv\" style=\"font-size:13px;color:var(--green);\" id=\"" + n + "-lb-marge-eur\">&ndash;</span></div>";
+  h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait d&eacute;placement HT</span><span class=\"trv\" id=\"" + n + "-lb-forfait-depl\">&ndash;</span></div>";
+
+  // ── FORFAIT INTERVENTION ──
+  h +=     "<div style=\"padding:18px 22px 4px;font-size:11px;font-weight:700;color:var(--accent);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.06em;\">Forfait intervention</div>";
+
+  h +=     "<div class=\"total-row\"><span class=\"trl\">Main d&apos;&oelig;uvre intervention &mdash; "
+  +          "<input type=\"number\" id=\"" + n + "-s-joursinterv\" value=\"0\" min=\"0\" max=\"30\" step=\"0.5\" style=\"width:40px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--accent);font-family:DM Mono,monospace;font-size:13px;text-align:center;outline:none;\" oninput=\"onSyntheseManual(&apos;" + n + "&apos;,'joursinterv')\">"
+  +          " j"
+  +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'joursinterv')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
+  +          " <span id=\"" + n + "-auto-joursinterv\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
+  +        "</span><span class=\"trv\" id=\"" + n + "-lb-mo-interv-detail\" style=\"font-size:10px;color:var(--text3);\">&ndash;</span></div>";
+
+  h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait intervention HT</span><span class=\"trv\" id=\"" + n + "-lb-forfait-interv\">&ndash;</span></div>";
+
+  // ── TOTAL ──
+  h +=     "<div class=\"total-row main\" style=\"margin-top:8px;\"><span class=\"trl\">Total intervention HT</span><span class=\"trv\" id=\"" + n + "-lb-total\">&ndash;</span></div>";
   h +=     "</div>";
   h +=   "</div>";
   h +=   mentionBlock;
@@ -1746,7 +1851,10 @@ function loadConfig() {
   set('cfg-seuil-trajet',      cfg.seuilTrajet);
   set('cfg-hotel',             cfg.hotel);
   set('cfg-marge-install',     cfg.margeInstall);
-  set('cfg-marge-maintenance', cfg.margeMaintenance);
+  set('cfg-taux-heure-trajet', cfg.tauxHeureTrajet);
+  set('cfg-cout-km', cfg.coutKm);
+  set('cfg-forfait-interv-1j', cfg.forfaitInterv1j);
+  set('cfg-forfait-interv-05j', cfg.forfaitInterv05j);
   set('cfg-seuil-interdit',    cfg.seuilInterdit);
   set('cfg-seuil-reduite',     cfg.seuilReduite);
   set('cfg-seuil-ok',          cfg.seuilOk);
@@ -1861,7 +1969,10 @@ function getDefaultConfig() {
     seuilTrajet: 150,
     hotel: 95,
     margeInstall: 15,
-    margeMaintenance: 35,
+    tauxHeureTrajet: 76,
+    coutKm: 0.98,
+    forfaitInterv1j: 784,
+    forfaitInterv05j: 441,
     seuilInterdit: 20,
     seuilReduite: 26,
     seuilOk: 35,
@@ -1889,7 +2000,10 @@ function saveConfig() {
     seuilTrajet:      vn('cfg-seuil-trajet'),
     hotel:            vn('cfg-hotel'),
     margeInstall:     vn('cfg-marge-install'),
-    margeMaintenance: vn('cfg-marge-maintenance'),
+    tauxHeureTrajet: vn('cfg-taux-heure-trajet'),
+    coutKm: vn('cfg-cout-km'),
+    forfaitInterv1j: vn('cfg-forfait-interv-1j'),
+    forfaitInterv05j: vn('cfg-forfait-interv-05j'),
     seuilInterdit:    vn('cfg-seuil-interdit'),
     seuilReduite:     vn('cfg-seuil-reduite'),
     seuilOk:          vn('cfg-seuil-ok'),
@@ -2461,11 +2575,10 @@ function onTechChange(ns) {
   av.textContent = meta.initiales;
   av.className   = meta.pending ? 'tech-avatar pending' : 'tech-avatar';
   const base = getTechBase(key);
-  $(`${ns}-origin-label`).textContent = `Départ : ${base}`;
+  if (!originManuelle[ns] && $(`${ns}-origin-input`)) $(`${ns}-origin-input`).value = base;
   nuitsManuelles[ns] = false;
   syntheseManuelle[ns] = {};
-
-  // Si une adresse est déjà saisie, recalculer la distance depuis la nouvelle base
+  delete window._dureeTrajetAR[ns];
   const addr = $(`${ns}-adresse`) ? $(`${ns}-adresse`).value.trim() : '';
   if (addr) {
     $(`${ns}-dist-result`).style.display = 'none';
@@ -2480,6 +2593,29 @@ function onTechChange(ns) {
 //  NUITÉES & TRAJET
 // ══════════════════════════════════════════════
 const nuitsManuelles = { install:false, maint:false };
+const originManuelle = { install:false, maint:false };
+
+function onOriginManual(ns) {
+  originManuelle[ns] = true;
+  delete window._dureeTrajetAR[ns];
+  if ($(`${ns}-origin-auto-hint`)) $(`${ns}-origin-auto-hint`).style.display = 'none';
+}
+
+function resetOrigin(ns) {
+  originManuelle[ns] = false;
+  const key  = $(`${ns}-technicien`) ? $(`${ns}-technicien`).value : 'cisley';
+  const base = getTechBase(key);
+  if ($(`${ns}-origin-input`)) $(`${ns}-origin-input`).value = base;
+  nuitsManuelles[ns] = false;
+  syntheseManuelle[ns] = {};
+  delete window._dureeTrajetAR[ns];
+  const addr = $(`${ns}-adresse`) ? $(`${ns}-adresse`).value.trim() : '';
+  if (addr) {
+    calculerDistance(ns);
+  } else {
+    calcPage(ns);
+  }
+}
 const syntheseManuelle = { install:{}, maint:{} }; // { jours, nuits, km } when overridden
 
 var _autoUpdate = false;
@@ -2520,13 +2656,22 @@ function resetSynthese(ns) {
 function getSeuilNuit()   { return vn('cfg-seuil')        || 350; }
 function getSeuilTrajet() { return vn('cfg-seuil-trajet') || 200; }
 
-function onDistChange(ns) { nuitsManuelles[ns]=false; calcPage(ns); }
+function onDistChange(ns) { nuitsManuelles[ns]=false; delete window._dureeTrajetAR[ns]; calcPage(ns); }
 function recalcNuits(ns)  { nuitsManuelles[ns]=false; syntheseManuelle[ns]={}; calcPage(ns); }
 function onNuitsManual(ns){ nuitsManuelles[ns]=true;  calcPage(ns); }
 
 function calcJoursTrajet(dist) {
   const sT = getSeuilTrajet();
   return (dist/2) > sT ? 2 : 0;
+}
+
+// Calcul précis du temps de trajet facturé pour la maintenance, en heures (taux horaire fixe)
+var VITESSE_FALLBACK_KMH = 80; // utilisé seulement si la durée réelle n'est pas disponible
+function calcHeuresTrajetMaint(ns, dist) {
+  var heures = (window._dureeTrajetAR && window._dureeTrajetAR[ns] != null)
+    ? window._dureeTrajetAR[ns]
+    : (dist / VITESSE_FALLBACK_KMH); // estimation si pas de calcul d'itinéraire effectué
+  return Math.ceil(heures); // arrondi à l'heure supérieure (1.8h → 2h)
 }
 
 function calcNuitsAuto(dist, duree) {
@@ -2588,40 +2733,84 @@ function calcPage(ns) {
 
   // Nuitées auto
   const nuits = calcNuitsAuto(dist, duree);
-  const joursTrajet = calcJoursTrajet(dist);
-  const joursTotal  = duree + joursTrajet;
+  // Trajet : durée réelle en heures pour la maintenance (nouveau modèle horaire), logique classique sinon
+  const heuresTrajetAuto = ns === 'maint' ? calcHeuresTrajetMaint(ns, dist) : (calcJoursTrajet(dist) * 8);
+  const joursTrajetClassique = calcJoursTrajet(dist); // conservé pour ns !== 'maint' (prix machine, non concerné ici)
+  const joursTotal  = duree + joursTrajetClassique;
 
   // Synthèse — utiliser les valeurs manuelles si saisies
   const sm = syntheseManuelle[ns] || {};
-  const _smKm    = $(`${ns}-s-km`)    ? parseFloat($(`${ns}-s-km`).value)    : NaN;
-  const _smNuits = $(`${ns}-s-nuits`) ? parseFloat($(`${ns}-s-nuits`).value) : NaN;
-  const _smJours = $(`${ns}-s-jours`) ? parseFloat($(`${ns}-s-jours`).value) : NaN;
-  const _smRepas = $(`${ns}-s-repas`) ? parseFloat($(`${ns}-s-repas`).value) : NaN;
-  const effDist  = sm.km    ? (isNaN(_smKm)    ? dist      : _smKm)    : dist;
-  const effNuits = sm.nuits ? (isNaN(_smNuits)  ? nuits     : _smNuits) : nuits;
-  const effJours = sm.jours ? (isNaN(_smJours)  ? joursTotal: _smJours) : joursTotal;
+  const _smKm           = $(`${ns}-s-km`)           ? parseFloat($(`${ns}-s-km`).value)           : NaN;
+  const _smNuits        = $(`${ns}-s-nuits`)        ? parseFloat($(`${ns}-s-nuits`).value)        : NaN;
+  const _smHeuresTrajet = $(`${ns}-s-heurestrajet`) ? parseFloat($(`${ns}-s-heurestrajet`).value) : NaN;
+  const _smJoursInterv  = $(`${ns}-s-joursinterv`)  ? parseFloat($(`${ns}-s-joursinterv`).value)  : NaN;
+  const _smRepas        = $(`${ns}-s-repas`)        ? parseFloat($(`${ns}-s-repas`).value)        : NaN;
+  const effDist         = sm.km          ? (isNaN(_smKm)          ? dist            : _smKm)          : dist;
+  const effNuits        = sm.nuits       ? (isNaN(_smNuits)        ? nuits           : _smNuits)        : nuits;
+  const effHeuresTrajet = sm.heurestrajet? (isNaN(_smHeuresTrajet) ? heuresTrajetAuto: _smHeuresTrajet) : heuresTrajetAuto;
+  const effJoursInterv  = sm.joursinterv ? (isNaN(_smJoursInterv)  ? duree           : _smJoursInterv)  : duree;
 
   // Repas auto = toujours calculé depuis les valeurs 01-02-03, pas depuis les overrides 04
   const repas     = calcRepas(dist, duree, nuits);
-  const anyManual = sm.jours || sm.nuits || sm.km;
+  const anyManual = sm.heurestrajet || sm.joursinterv || sm.nuits || sm.km;
   const effRepasTotal = sm.repas ? (isNaN(_smRepas) ? repas.total : _smRepas)
                       : anyManual ? (parseFloat($(`${ns}-s-repas`) ? $(`${ns}-s-repas`).value : 0) || repas.total)
                       : repas.total;
 
-  const transport = effDist  * ik;
-  const hotel     = effNuits * (vn('cfg-hotel') || 80);
-  const mo        = coutJour * effJours;
-  const sousTotal = mo + transport + hotel + effRepasTotal;
-
   const cfg = getCfg();
+  const ikEffectif = ns === 'maint' ? (cfg.coutKm ?? 0.98) : ik;
+  const transport = effDist * ikEffectif;
+  const hotel     = effNuits * (vn('cfg-hotel') || 80);
+
   const margePct = ns === 'maint'
-    ? (cfg.margeMaintenance ?? 35)
+    ? 0
     : (cfg.margeInstall     ?? 15);
-  const total = sousTotal * (1 + margePct/100);
+
+  let moTrajetSale, forfaitDepl, sousTotalDepl, forfaitInterv, total, sousTotal, margeEur, joursIntervDetail, moInterv;
+
+  if (ns === 'maint') {
+    // ── Nouveau modèle : taux horaire trajet + forfaits fixes intervention — tarifs déjà au prix de vente, sans marge supplémentaire ──
+    const tauxHeureTrajet = cfg.tauxHeureTrajet ?? 76;
+    const forfait1j  = cfg.forfaitInterv1j  ?? 784;
+    const forfait05j = cfg.forfaitInterv05j ?? 441;
+
+    moTrajetSale  = effHeuresTrajet * tauxHeureTrajet; // déjà un prix de vente
+
+    // Forfait déplacement : transport (coût km déjà au prix de vente) + hôtel + repas + MO trajet
+    sousTotalDepl = transport + hotel + effRepasTotal;
+    forfaitDepl   = sousTotalDepl + moTrajetSale;
+
+    // Forfait intervention : empilement de forfaits fixes 1j / 0,5j (prix de vente direct)
+    const fullDays = Math.floor(effJoursInterv + 1e-9);
+    const rem      = effJoursInterv - fullDays;
+    forfaitInterv  = fullDays * forfait1j;
+    let detailParts = [];
+    if (fullDays > 0) detailParts.push(fullDays + '×' + fmtE(forfait1j));
+    if (rem >= 0.5 - 1e-9) { forfaitInterv += forfait05j; detailParts.push('1×'+fmtE(forfait05j)); }
+    else if (rem > 1e-9)   { const part = forfait05j * (rem/0.5); forfaitInterv += part; detailParts.push(fmtE(part)); }
+    joursIntervDetail = detailParts.length ? detailParts.join(' + ') : '–';
+
+    sousTotal = sousTotalDepl;
+    total     = forfaitDepl + forfaitInterv;
+    margeEur  = 0;
+  } else {
+    // ── Logique classique inchangée (prix machine / install — code séparé, non affecté en pratique) ──
+    const moTrajetClassique = coutJour * joursTrajetClassique;
+    moInterv = coutJour * effJoursInterv;
+    moTrajetSale  = moTrajetClassique;
+    sousTotalDepl = transport + hotel + effRepasTotal + moTrajetClassique;
+    forfaitDepl   = sousTotalDepl * (1 + margePct/100);
+    forfaitInterv = moInterv * (1 + margePct/100);
+    sousTotal     = sousTotalDepl + moInterv;
+    total         = forfaitDepl + forfaitInterv;
+    margeEur      = total - sousTotal;
+    joursIntervDetail = '';
+  }
 
   // Mettre à jour les inputs inline si pas en mode manuel
   _autoUpdate = true;
-  if (!sm.jours && $(`${ns}-s-jours`)) $(`${ns}-s-jours`).value = joursTotal%1===0 ? joursTotal : joursTotal.toFixed(1);
+  if (!sm.heurestrajet && $(`${ns}-s-heurestrajet`)) $(`${ns}-s-heurestrajet`).value = heuresTrajetAuto;
+  if (!sm.joursinterv && $(`${ns}-s-joursinterv`)) $(`${ns}-s-joursinterv`).value = duree%1===0 ? duree : duree.toFixed(1);
   if (!sm.nuits && $(`${ns}-s-nuits`)) $(`${ns}-s-nuits`).value = nuits;
   if (!sm.km    && $(`${ns}-s-km`))    $(`${ns}-s-km`).value    = Math.round(dist);
   if (!sm.repas && !anyManual && $(`${ns}-s-repas`)) $(`${ns}-s-repas`).value = repas.total.toFixed(0);
@@ -2629,8 +2818,12 @@ function calcPage(ns) {
   _autoUpdate = false;
 
   // Afficher les valeurs auto en référence (grisées)
-  const autoJours = joursTotal%1===0 ? joursTotal : joursTotal.toFixed(1);
-  if ($(`${ns}-auto-jours`)) $(`${ns}-auto-jours`).textContent = sm.jours ? '(auto: '+autoJours+' j)' : '';
+  if ($(`${ns}-auto-heurestrajet`)) {
+    var heuresReelles = (window._dureeTrajetAR && window._dureeTrajetAR[ns] != null) ? window._dureeTrajetAR[ns] : (dist / VITESSE_FALLBACK_KMH);
+    var realLabel = heuresReelles < 1 ? Math.round(heuresReelles*60)+' min' : heuresReelles.toFixed(1).replace('.0','')+'h';
+    $(`${ns}-auto-heurestrajet`).textContent = sm.heurestrajet ? '(auto: '+heuresTrajetAuto+'h — réel '+realLabel+' AR)' : '';
+  }
+  if ($(`${ns}-auto-joursinterv`)) $(`${ns}-auto-joursinterv`).textContent = sm.joursinterv ? '(auto: '+(duree%1===0?duree:duree.toFixed(1))+' j)' : '';
   if ($(`${ns}-auto-km`))    $(`${ns}-auto-km`).textContent    = sm.km    ? '(auto: '+Math.round(dist)+' km)' : '';
   if ($(`${ns}-auto-nuits`)) $(`${ns}-auto-nuits`).textContent = sm.nuits ? '(auto: '+nuits+' nuit'+(nuits>1?'s':'')+')' : '';
   if ($(`${ns}-auto-repas`)) $(`${ns}-auto-repas`).textContent = sm.repas ? '(auto: '+repas.total.toFixed(0)+' €)' : '';
@@ -2639,16 +2832,20 @@ function calcPage(ns) {
   $(`${ns}-row-hotel`).style.display = 'flex';
   $(`${ns}-row-repas`).style.display = hasRepas ? 'flex' : 'none';
 
-  $(`${ns}-lb-mo`).textContent        = fmtE(mo);
-  $(`${ns}-lb-transport`).textContent = fmtE(transport);
-  $(`${ns}-lb-hotel`).textContent     = fmtE(hotel);
+  $(`${ns}-lb-mo-trajet`).textContent  = fmtE(moTrajetSale);
+  $(`${ns}-lb-transport`).textContent  = fmtE(transport);
+  $(`${ns}-lb-hotel`).textContent      = fmtE(hotel);
   if ($(`${ns}-lb-repas`)) $(`${ns}-lb-repas`).textContent = fmtE(effRepasTotal);
+  if ($(`${ns}-lb-soustotal-depl`)) $(`${ns}-lb-soustotal-depl`).textContent = fmtE(sousTotalDepl);
+  if ($(`${ns}-lb-forfait-depl`))   $(`${ns}-lb-forfait-depl`).textContent   = fmtE(forfaitDepl);
+
+  if ($(`${ns}-lb-mo-interv-detail`)) $(`${ns}-lb-mo-interv-detail`).textContent = joursIntervDetail;
+  if ($(`${ns}-lb-forfait-interv`))   $(`${ns}-lb-forfait-interv`).textContent   = fmtE(forfaitInterv);
+
   $(`${ns}-lb-total`).textContent = fmtE(total);
-  // Marge
-  const margeEur = total - sousTotal;
-  if ($(`${ns}-lb-soustotal`)) $(`${ns}-lb-soustotal`).textContent = fmtE(sousTotal);
   if ($(`${ns}-lb-marge-pct`)) $(`${ns}-lb-marge-pct`).textContent = margePct.toFixed(1);
   if ($(`${ns}-lb-marge-eur`)) $(`${ns}-lb-marge-eur`).textContent = fmtE(margeEur);
+  if ($(`${ns}-row-marge-frais`)) $(`${ns}-row-marge-frais`).style.display = margePct > 0 ? 'flex' : 'none';
 
   // Validation
   if (ns === 'maint') validateMaint(ns);
@@ -2665,7 +2862,7 @@ function calcPage(ns) {
     // Stocker les valeurs brutes pour les checkboxes du mode avancé
     // (les labels DOM sont gérés par calcProjet uniquement)
     if (ns === 'install') {
-      window._mesCouts = { mo: mo, transport: transport, hotel: hotel, repas: repas.total, hasNuits: hasNuits };
+      window._mesCouts = { mo: moTrajetSale + moInterv, transport: transport, hotel: hotel, repas: repas.total, hasNuits: effNuits > 0 };
     }
   }
 }
@@ -2705,11 +2902,20 @@ async function routeDist(fLat,fLon,tLat,tLon) {
   if (d.code!=='Ok') throw new Error();
   return d.routes[0].distance/1000;
 }
+// Variante qui retourne aussi la durée réelle du trajet (utilisée pour la maintenance)
+async function routeInfo(fLat,fLon,tLat,tLon) {
+  const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${fLon},${fLat};${tLon},${tLat}?overview=false`);
+  const d = await r.json();
+  if (d.code!=='Ok') throw new Error();
+  return { km: d.routes[0].distance/1000, hours: d.routes[0].duration/3600 };
+}
+window._dureeTrajetAR = {}; // { ns: heures AR } — durée réelle de trajet récupérée via l'API d'itinéraire
+
 async function calculerDistance(ns) {
   const addr = $(`${ns}-adresse`).value.trim();
   if (!addr) return;
   const key  = $(`${ns}-technicien`).value;
-  const base = getTechBase(key);
+  const base = ($(`${ns}-origin-input`) && $(`${ns}-origin-input`).value.trim()) || getTechBase(key);
   const btn=$(`${ns}-addr-btn`), res=$(`${ns}-dist-result`);
   btn.disabled=true;
   res.style.display='flex'; res.className='dist-result loading';
@@ -2718,14 +2924,18 @@ async function calculerDistance(ns) {
   try {
     const [ori,dst] = await Promise.all([geocode(base), geocode(addr)]);
     $(`${ns}-dist-text`).textContent="Calcul de l'itinéraire...";
-    const km = await routeDist(ori.lat,ori.lon,dst.lat,dst.lon);
+    const info = await routeInfo(ori.lat,ori.lon,dst.lat,dst.lon);
+    const km = info.km;
     const ar = Math.round(km*2);
     $(`${ns}-distance`).value = ar;
+    window._dureeTrajetAR[ns] = info.hours * 2; // durée réelle AR en heures
     nuitsManuelles[ns] = false;
     syntheseManuelle[ns] = {};
     res.className='dist-result ok';
     $(`${ns}-dist-spinner`).style.display='none';
-    $(`${ns}-dist-text`).textContent=`✓  ${ar} km AR — ${Math.round(km)} km × 2 (depuis ${base.split(',')[0]})`;
+    const dh = info.hours*2;
+    const dhLabel = dh < 1 ? Math.round(dh*60)+' min' : dh.toFixed(1).replace('.0','')+'h';
+    $(`${ns}-dist-text`).textContent=`✓  ${ar} km AR — ${Math.round(km)} km × 2 — ${dhLabel} de route AR (depuis ${base.split(',')[0]})`;
     calcPage(ns);
   } catch {
     res.className='dist-result err';
@@ -2739,13 +2949,7 @@ async function calculerDistance(ns) {
 //  INIT
 // ══════════════════════════════════════════════
 // Injecter le HTML des simulateurs — déplacé dans loadConfigFromJson().then()
-// Fix origin label to show first tech's base
-if ($('maint-origin-label')) {
-  var firstBase = getTechBase('cisley');
-  $('maint-origin-label').textContent = 'Départ : ' + firstBase;
-}
-// Run initial validation
-validateMaint('maint');
+// Run initial validation — déplacé dans loadConfigFromJson().then() (après injection HTML)
 
 // Écoute clavier sur les champs adresse
 ['maint'].forEach(ns => {
@@ -2759,6 +2963,8 @@ loadConfigFromJson().then(function(){
   if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
   $('main-maint').innerHTML = buildSimulatorHTML('maint');
   loadConfig();
+  if ($('maint-origin-input')) $('maint-origin-input').value = getTechBase('cisley');
+  validateMaint('maint');
   initAppLock();
   if ($('proj-machine')) $('proj-machine').value = '';
   onProjTechChange();
@@ -2770,6 +2976,8 @@ loadConfigFromJson().then(function(){
   if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
   $('main-maint').innerHTML = buildSimulatorHTML('maint');
   loadConfig();
+  if ($('maint-origin-input')) $('maint-origin-input').value = getTechBase('cisley');
+  validateMaint('maint');
   initAppLock();
   if ($('proj-machine')) $('proj-machine').value = '';
   onProjTechChange();
@@ -5029,7 +5237,7 @@ function initFunnel() {
 }
 
 // ── Version footer ──
-var APP_VERSION = 'v1.3';
+var APP_VERSION = 'v3.4';
 var APP_BUILD   = '2026-05-25';
 (function(){
   var el = document.getElementById('footer-version');
