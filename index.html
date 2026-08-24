@@ -596,6 +596,7 @@
           <div class="spinner" id="proj-dist-spinner"></div>
           <span id="proj-dist-text"></span>
         </div>
+        <div id="proj-map" style="display:none;height:220px;border-radius:var(--radius-lg);margin-top:10px;overflow:hidden;border:1px solid var(--border);"></div>
       </div>
     </div>
 
@@ -2203,6 +2204,10 @@ async function calculerDistanceProjet() {
     const dhLabel = dh < 1 ? Math.round(dh*60)+' min' : dh.toFixed(1).replace('.0','')+'h';
     $('proj-dist-text').textContent = '✓  ' + ar + ' km AR — ' + Math.round(km) + ' km × 2 — ' + dhLabel + ' de route AR (depuis ' + base.split(',')[0] + ')';
     calcProjet();
+    try {
+      const coords = await routeGeometry(ori.lat, ori.lon, dst.lat, dst.lon);
+      showRouteMap('proj-map', ori.lat, ori.lon, dst.lat, dst.lon, coords, base, addr);
+    } catch(mapErr) { /* carte secondaire */ }
   } catch(e) {
     res.className = 'dist-result err';
     $('proj-dist-spinner').style.display = 'none';
