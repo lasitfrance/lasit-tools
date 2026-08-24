@@ -651,7 +651,7 @@
           </button>
           <div id="mes-detail-panel" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:4px;">
             <div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);">
-              <span style="font-size:12px;color:var(--text2);">Main d'œuvre (<span id="prix-mes-lb-duree">0</span> j + <span id="prix-mes-lb-trajet">0</span> j trajet)</span>
+              <span style="font-size:12px;color:var(--text2);">Main d'œuvre (<span id="prix-mes-lb-duree">0</span> j + <span id="prix-mes-lb-trajet">0</span> h trajet)</span>
               <span style="font-family:DM Mono,monospace;font-size:12px;color:var(--text);" id="prix-mes-mo">0,00 €</span>
             </div>
             <div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);">
@@ -2135,7 +2135,7 @@ function onProjTechChange() {
   }
 }
 
-function onProjDistChange()   { projNuitsManuelles = false; calcProjet(); }
+function onProjDistChange()   { projNuitsManuelles = false; delete window._dureeTrajetAR['proj']; calcProjet(); }
 function onProjRecalcNuits()  { projNuitsManuelles = false; mesPrixManuel = false; calcProjet(); }
 function onProjNuitsManual()  { projNuitsManuelles = true;  calcProjet(); }
 
@@ -2191,13 +2191,17 @@ async function calculerDistanceProjet() {
   try {
     const [ori, dst] = await Promise.all([geocode(base), geocode(addr)]);
     $('proj-dist-text').textContent = "Calcul de l'itinéraire...";
-    const km = await routeDist(ori.lat, ori.lon, dst.lat, dst.lon);
+    const info = await routeInfo(ori.lat, ori.lon, dst.lat, dst.lon);
+    const km = info.km;
     const ar = Math.round(km * 2);
     $('proj-distance').value = ar;
+    window._dureeTrajetAR['proj'] = info.hours * 2; // durée réelle AR en heures
     projNuitsManuelles = false;
     res.className = 'dist-result ok';
     $('proj-dist-spinner').style.display = 'none';
-    $('proj-dist-text').textContent = '✓  ' + ar + ' km AR — ' + Math.round(km) + ' km × 2 (depuis ' + base.split(',')[0] + ')';
+    const dh = info.hours * 2;
+    const dhLabel = dh < 1 ? Math.round(dh*60)+' min' : dh.toFixed(1).replace('.0','')+'h';
+    $('proj-dist-text').textContent = '✓  ' + ar + ' km AR — ' + Math.round(km) + ' km × 2 — ' + dhLabel + ' de route AR (depuis ' + base.split(',')[0] + ')';
     calcProjet();
   } catch(e) {
     res.className = 'dist-result err';
@@ -2227,7 +2231,6 @@ function calcProjet() {
 
   var dist  = vn('proj-distance');
   var duree = vn('proj-duree');
-  var seuilN = getSeuilNuit();
 
   // Nuitées auto
   if (!projNuitsManuelles) {
@@ -2241,14 +2244,21 @@ function calcProjet() {
       $('proj-nuits-hint').textContent = 'Aucune nuitée — trajet dans la journée';
     }
   }
-  var nuits       = vn('proj-nuits');
-  var joursTrajet = calcJoursTrajet(dist);
-  var joursTotal  = duree + joursTrajet;
+  var nuits = vn('proj-nuits');
+
+  // Trajet : durée réelle en heures × taux horaire (même logique que Maintenance)
+  var heuresTrajet = (window._dureeTrajetAR && window._dureeTrajetAR['proj'] != null)
+    ? Math.round(window._dureeTrajetAR['proj'] * 100) / 100
+    : (dist / VITESSE_FALLBACK_KMH);
+  var moTrajet = heuresTrajet * (cfg2.tauxHeureTrajet ?? 76);
+
+  // Intervention : forfaits fixes
+  var moInterv = calcMoForfait(duree);
 
   var transport  = dist * ik;
   var hotelCout  = nuits * (vn('cfg-hotel') || 80);
   var repasData  = calcRepas(dist, duree, nuits);
-  var mo         = calcMoForfait(joursTotal);
+  var mo         = moTrajet + moInterv;
   var hasNuits   = nuits > 0;
 
   // Sync MES detail (same as calcPage install)
@@ -2256,7 +2266,7 @@ function calcProjet() {
   var elDuree = $('prix-mes-lb-duree');
   if (elDuree) {
     elDuree.textContent                  = duree % 1 === 0 ? duree : duree.toFixed(1);
-    $('prix-mes-lb-trajet').textContent  = joursTrajet;
+    $('prix-mes-lb-trajet').textContent  = heuresTrajet.toFixed(2).replace(/\.?0+$/, '');
     $('prix-mes-lb-km').textContent      = Math.round(dist);
     $('prix-mes-mo').textContent         = fmtE(mo);
     $('prix-mes-transport').textContent  = fmtE(transport);
@@ -5293,7 +5303,7 @@ function initFunnel() {
 }
 
 // ── Version footer ──
-var APP_VERSION = 'v3.8';
+var APP_VERSION = 'v3.9';
 var APP_BUILD   = '2026-05-25';
 (function(){
   var el = document.getElementById('footer-version');
