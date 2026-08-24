@@ -2210,9 +2210,20 @@ async function calculerDistanceProjet() {
 function calcProjet() {
   updateRemiseLock();
   var techKey  = $('proj-technicien') ? $('proj-technicien').value : 'cisley';
-  var td       = getTechData(techKey);
   var ik       = getIK(techKey);
-  var coutJour = td.salaire * (1 + CHARGES) / JOURSOUV;
+
+  // Utiliser les forfaits fixes (mêmes que le calculateur Maintenance)
+  var cfg2 = getCfg();
+  var forfait1j  = cfg2.forfaitInterv1j  ?? 745;
+  var forfait05j = cfg2.forfaitInterv05j ?? 385;
+  function calcMoForfait(jours) {
+    var fullDays = Math.floor(jours + 1e-9);
+    var rem      = jours - fullDays;
+    var total    = fullDays * forfait1j;
+    if (rem >= 0.5 - 1e-9) total += forfait05j;
+    else if (rem > 1e-9)   total += forfait05j * (rem / 0.5);
+    return total;
+  }
 
   var dist  = vn('proj-distance');
   var duree = vn('proj-duree');
@@ -2237,7 +2248,7 @@ function calcProjet() {
   var transport  = dist * ik;
   var hotelCout  = nuits * (vn('cfg-hotel') || 80);
   var repasData  = calcRepas(dist, duree, nuits);
-  var mo         = coutJour * joursTotal;
+  var mo         = calcMoForfait(joursTotal);
   var hasNuits   = nuits > 0;
 
   // Sync MES detail (same as calcPage install)
@@ -5282,7 +5293,7 @@ function initFunnel() {
 }
 
 // ── Version footer ──
-var APP_VERSION = 'v3.7';
+var APP_VERSION = 'v3.8';
 var APP_BUILD   = '2026-05-25';
 (function(){
   var el = document.getElementById('footer-version');
