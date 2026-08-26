@@ -27,11 +27,11 @@
   "dej": 20,
   "diner": 30,
   "ship": {
-    "micromark": 1200,
-    "towermark": 1400,
-    "towermark-lx": 1600,
-    "compactmark": 1800,
-    "powermark": 1200,
+    "micromark": 1500,
+    "towermark": 1750,
+    "towermark-lx": 2050,
+    "compactmark": 2200,
+    "powermark": 1800,
     "custom": 1200
   },
   "tech": {
