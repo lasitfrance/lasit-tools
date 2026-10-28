@@ -6,6 +6,37 @@
   <title>LASIT LASER France</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ══════════════ FIREBASE ══════════════ -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script>
+    (function(){
+      try {
+        var firebaseConfig = {
+          apiKey: "AIzaSyAbJHf3Tp4xmIYltUqxfDZZ9anQFo7Zz0k",
+          authDomain: "lasit-sales.firebaseapp.com",
+          projectId: "lasit-sales",
+          storageBucket: "lasit-sales.firebasestorage.app",
+          messagingSenderId: "204661858516",
+          appId: "1:204661858516:web:ba4adb184fba17f9451b41"
+        };
+        firebase.initializeApp(firebaseConfig);
+        window.FS = firebase.firestore();
+        // Connexion anonyme (requise par les règles de sécurité).
+        // Ne bloque jamais l'app : en cas d'échec on continue (mode test ouvert).
+        window.DB_READY = firebase.auth().signInAnonymously()
+          .then(function(){ console.log('[Firebase] connecté'); return true; })
+          .catch(function(e){ console.warn('[Firebase] auth:', e && e.code); return false; });
+      } catch(e) {
+        console.warn('[Firebase] init échouée:', e);
+        window.FS = null;
+        window.DB_READY = Promise.resolve(false);
+      }
+    })();
+  </script>
+
   <style>
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     :root {
@@ -251,6 +282,7 @@
     .nav-btn.page-funnel.active { color:#a78bfa; border-color:rgba(139,92,246,.35); background:rgba(139,92,246,.07); }
     .nav-btn.page-leads.active  { color:#f43f5e; border-color:rgba(244,63,94,.35);  background:rgba(244,63,94,.07); }
     .nav-btn.page-prix.active    { color:#f97316; border-color:rgba(249,115,22,.35);  background:rgba(249,115,22,.07); }
+    .nav-btn.page-echant.active  { color:#22d3ee; border-color:rgba(34,211,238,.35);  background:rgba(34,211,238,.07); }
     .page-hero-inner.ship        { background:rgba(192,132,252,.07); border:1px solid rgba(192,132,252,.25); }
     .page-hero-title.ship        { color:#c084fc; }
     .page-hero-inner.prix        { background:rgba(249,115,22,.07);  border:1px solid rgba(249,115,22,.25); }
@@ -435,6 +467,8 @@
     <div class="nav-sep"></div>
     <button class="nav-btn page-leads" id="tab-leads" onclick="openLeads()">🎯 Lead Analyzer</button>
     <div class="nav-sep"></div>
+    <button class="nav-btn page-echant" id="tab-echantillons" onclick="openEchantillons()">🧪 Échantillons</button>
+    <div class="nav-sep"></div>
     <button class="nav-btn page-config" id="tab-config" onclick="openConfig()">⚙ Configuration</button>
   </nav>
 </header>
@@ -491,6 +525,17 @@
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
+
+      <!-- Échantillons -->
+      <button onclick="openEchantillons()" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;transition:all .18s;text-align:left;" onmouseover="this.style.borderColor='rgba(34,211,238,.4)';this.style.background='rgba(34,211,238,.05)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg2)'">
+        <div style="width:52px;height:52px;border-radius:12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🧪</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Demandes d'échantillons</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos demandes de tests laser pour l'Italie. La liste est validée puis transmise à Emanuele, et se réinitialise chaque lundi et mercredi à 14h.</div>
+        </div>
+        <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
+      </button>
+
       <button onclick="openConfig()" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;transition:all .18s;text-align:left;" onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--bg3)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg2)'">
         <div style="width:52px;height:52px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">⚙</div>
         <div>
@@ -1204,6 +1249,138 @@
 
 
 <!-- ══════════════════════════════════════════
+     PAGE ÉCHANTILLONS
+══════════════════════════════════════════ -->
+<style>
+  :root { --ech:#22d3ee; --ech-bg:rgba(34,211,238,.08); --ech-br:rgba(34,211,238,.28); }
+  .ech-main { max-width:940px; margin:0 auto; padding:28px 40px 80px; }
+  .ech-hero { display:flex; align-items:center; gap:16px; padding:20px 24px; border-radius:var(--radius-lg); background:var(--ech-bg); border:1px solid var(--ech-br); margin-bottom:24px; }
+  .ech-hero-ico { font-size:28px; }
+  .ech-hero h1 { font-size:20px; font-weight:700; color:var(--ech); letter-spacing:-.01em; }
+  .ech-hero .sub { font-size:11px; color:var(--text2); font-family:DM Mono,monospace; margin-top:3px; }
+  .ech-hero .next { margin-left:auto; font-size:11px; font-family:DM Mono,monospace; color:var(--ech); background:var(--ech-bg); border:1px solid var(--ech-br); border-radius:20px; padding:5px 13px; white-space:nowrap; }
+  .ech-grid { display:grid; grid-template-columns:320px 1fr; gap:20px; align-items:start; }
+  @media (max-width:720px){ .ech-grid{ grid-template-columns:1fr; } .ech-main{ padding:20px; } }
+  .ech-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .ech-card-hd { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .ech-card-hd h3 { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.12em; color:var(--text3); font-family:DM Mono,monospace; }
+  .ech-card-bd { padding:18px; }
+  .ech-field { margin-bottom:14px; }
+  .ech-field:last-child { margin-bottom:0; }
+  .ech-lbl { display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); font-family:DM Mono,monospace; margin-bottom:6px; }
+  .ech-input, .ech-select { width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); padding:10px 12px; color:var(--text); font:14px 'Syne',sans-serif; outline:none; transition:border-color .15s; }
+  .ech-input:focus, .ech-select:focus { border-color:var(--ech); }
+  .ech-urg { display:flex; gap:6px; }
+  .ech-urg-btn { flex:1; padding:9px 4px; border-radius:var(--radius); border:2px solid var(--border2); background:var(--bg3); cursor:pointer; font:600 12px 'Syne',sans-serif; text-align:center; color:var(--text2); transition:all .15s; }
+  .ech-urg-btn.haute.on { border-color:var(--red); background:var(--red-bg); color:var(--red); }
+  .ech-urg-btn.normale.on { border-color:#f59e0b; background:rgba(245,158,11,.1); color:#f59e0b; }
+  .ech-urg-btn.basse.on { border-color:var(--green); background:var(--green-bg); color:var(--green); }
+  .ech-check { display:flex; align-items:flex-start; gap:10px; background:var(--bg3); border:1.5px solid var(--border2); border-radius:var(--radius); padding:12px; cursor:pointer; transition:border-color .15s; }
+  .ech-check.on { border-color:var(--green); background:var(--green-bg); }
+  .ech-check input { margin-top:1px; width:16px; height:16px; accent-color:var(--green); cursor:pointer; flex-shrink:0; }
+  .ech-check .ct { font-size:12.5px; line-height:1.4; color:var(--text); }
+  .ech-check .ct b { display:block; margin-bottom:2px; }
+  .ech-check .ct span { font-size:11px; color:var(--text2); }
+  .ech-add { width:100%; padding:11px; border-radius:var(--radius); border:none; background:var(--ech); color:#0f0f0f; font:700 14px 'Syne',sans-serif; cursor:pointer; transition:opacity .15s; }
+  .ech-add:hover { opacity:.88; }
+  .ech-tabs { display:flex; border-bottom:1px solid var(--border); }
+  .ech-tab { padding:12px 18px; font:600 13px 'Syne',sans-serif; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:7px; white-space:nowrap; }
+  .ech-tab.on { color:var(--ech); border-bottom-color:var(--ech); }
+  .ech-tab-n { background:var(--bg3); border-radius:10px; padding:1px 7px; font-size:11px; font-family:DM Mono,monospace; }
+  .ech-item { padding:13px 18px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:10px; }
+  .ech-item:last-child { border-bottom:none; }
+  .ech-rank { font:600 12px 'DM Mono',monospace; color:var(--text3); width:24px; padding-top:3px; flex-shrink:0; }
+  .ech-item-bd { flex:1; min-width:0; }
+  .ech-client { font-size:15px; font-weight:600; color:var(--text); }
+  .ech-meta { display:flex; align-items:center; gap:6px; margin-top:5px; flex-wrap:wrap; }
+  .ech-tag { font:600 11px 'Syne',sans-serif; color:var(--text2); background:var(--bg3); border:1px solid var(--border2); border-radius:4px; padding:2px 7px; }
+  .ech-tag-u { font:700 10px 'Syne',sans-serif; text-transform:uppercase; letter-spacing:.04em; border-radius:4px; padding:2px 7px; }
+  .ech-tag-u.haute { color:var(--red); background:var(--red-bg); border:1px solid rgba(224,112,112,.3); }
+  .ech-tag-u.normale { color:#f59e0b; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); }
+  .ech-tag-u.basse { color:var(--green); background:var(--green-bg); border:1px solid var(--green-border); }
+  .ech-date { font:400 11px 'DM Mono',monospace; color:var(--text3); }
+  .ech-ctrl { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+  .ech-cbtn { width:27px; height:27px; border-radius:6px; border:1px solid var(--border2); background:var(--bg3); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:14px; transition:all .1s; }
+  .ech-cbtn:hover:not(:disabled) { background:var(--bg4); color:var(--text); }
+  .ech-cbtn:disabled { opacity:.3; cursor:default; }
+  .ech-cbtn.del { color:var(--red); }
+  .ech-actbar { padding:12px 18px; border-top:1px solid var(--border); display:flex; gap:8px; flex-wrap:wrap; }
+  .ech-abtn { padding:8px 14px; border-radius:var(--radius); border:1px solid var(--border2); background:var(--bg3); color:var(--text); font:600 13px 'Syne',sans-serif; cursor:pointer; transition:all .15s; }
+  .ech-abtn.pri { background:var(--ech); color:#0f0f0f; border-color:var(--ech); }
+  .ech-abtn:hover { opacity:.88; }
+  .ech-empty { padding:40px 18px; text-align:center; color:var(--text3); }
+  .ech-empty .ico { font-size:28px; margin-bottom:10px; }
+  .ech-mgr-btn { font:600 11px 'DM Mono',monospace; color:var(--text2); background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); padding:6px 12px; cursor:pointer; transition:all .15s; }
+  .ech-mgr-btn.on { color:var(--ech); border-color:var(--ech-br); background:var(--ech-bg); }
+  .ech-toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--text); color:var(--bg); padding:10px 20px; border-radius:var(--radius); font:500 14px 'Syne',sans-serif; opacity:0; transition:all .22s; pointer-events:none; z-index:999; white-space:nowrap; }
+  .ech-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+<div class="view" id="view-echantillons">
+  <main class="ech-main">
+    <div class="ech-hero">
+      <div class="ech-hero-ico">🧪</div>
+      <div>
+        <h1>Demandes d'échantillons</h1>
+        <div class="sub">Saisie des commerciaux · liste transmise à l'Italie</div>
+      </div>
+      <div class="next" id="ech-next">—</div>
+    </div>
+
+    <div class="ech-grid">
+      <!-- Formulaire -->
+      <div class="ech-card">
+        <div class="ech-card-hd"><h3>Nouvelle demande</h3></div>
+        <div class="ech-card-bd">
+          <div class="ech-field">
+            <label class="ech-lbl">Commercial</label>
+            <select class="ech-select" id="ech-com"><option value="">— Choisir —</option></select>
+          </div>
+          <div class="ech-field">
+            <label class="ech-lbl">Client / Prospect</label>
+            <input class="ech-input" id="ech-client" placeholder="Ex : Société Dupont">
+          </div>
+          <div class="ech-field">
+            <label class="ech-lbl">Urgence</label>
+            <div class="ech-urg">
+              <div class="ech-urg-btn haute" data-v="haute" onclick="echSetUrg('haute',this)">🔴 Haute</div>
+              <div class="ech-urg-btn normale on" data-v="normale" onclick="echSetUrg('normale',this)">🟡 Normale</div>
+              <div class="ech-urg-btn basse" data-v="basse" onclick="echSetUrg('basse',this)">🟢 Basse</div>
+            </div>
+          </div>
+          <div class="ech-field">
+            <label class="ech-lbl">Vérification tracking</label>
+            <label class="ech-check" id="ech-check-row">
+              <input type="checkbox" id="ech-tracking" onchange="document.getElementById('ech-check-row').classList.toggle('on',this.checked)">
+              <span class="ct"><b>Le dernier échantillon est bien arrivé en Italie</b><span>J'ai vérifié le numéro de tracking avant de faire cette demande</span></span>
+            </label>
+          </div>
+          <div class="ech-field">
+            <button class="ech-add" onclick="echAdd()">+ Ajouter la demande</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Liste -->
+      <div class="ech-card">
+        <div class="ech-card-hd" style="padding-right:14px;">
+          <div class="ech-tabs" style="border:none;">
+            <div class="ech-tab on" id="ech-tab-attente" onclick="echSwitchTab('attente')">Demandes reçues <span class="ech-tab-n" id="ech-n-attente">0</span></div>
+            <div class="ech-tab" id="ech-tab-envoi" onclick="echSwitchTab('envoi')">Liste validée <span class="ech-tab-n" id="ech-n-envoi">0</span></div>
+          </div>
+          <button class="ech-mgr-btn" id="ech-mgr-btn" onclick="echToggleManager()">🔒 Mode gestion</button>
+        </div>
+        <div id="ech-list"><div class="ech-empty"><div class="ico">⏳</div>Connexion…</div></div>
+        <div class="ech-actbar" id="ech-actbar" style="display:none;">
+          <button class="ech-abtn pri" id="ech-valider-btn" onclick="echValider()">✓ Établir la liste finale</button>
+          <button class="ech-abtn" id="ech-email-btn" onclick="echEmail()" style="display:none;">📧 Envoyer à Emanuele</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="ech-toast" id="ech-toast"></div>
+
+<!-- ══════════════════════════════════════════
      PAGE CONFIGURATION
 ══════════════════════════════════════════ -->
 <div class="view" id="view-config">
@@ -1215,7 +1392,7 @@
       <div class="cfg-header-sub">Données confidentielles — accès restreint</div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-      <button onclick="exportConfigJson()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">↓ Exporter config.json</button>
+      <button id="cfg-cloud-btn" onclick="saveConfigToCloud()" style="background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--radius);padding:8px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;transition:all .15s;">☁ Sauvegarder dans le cloud</button>
       <button class="cfg-lock-btn" onclick="lockConfig()">🔒 Verrouiller</button>
     </div>
   </div>
@@ -1757,7 +1934,7 @@ function buildSimulatorHTML(ns) {
 //  NAVIGATION & PIN
 // ══════════════════════════════════════════════
 function switchPage(page) {
-  ['home','prix','maint','leads','funnel','config'].forEach(p => {
+  ['home','prix','maint','leads','funnel','echantillons','config'].forEach(p => {
     const v = $(`view-${p}`);
     const t = $(`tab-${p}`);
     if (v) v.classList.toggle('active', p === page);
@@ -1801,6 +1978,7 @@ function openConfig() {
   pinBuffer = ''; updateDots(); $('pin-error').textContent = '';
   $('pin-overlay').classList.remove('hidden');
 }
+function openEchantillons() { switchPage('echantillons'); renderEchant(); }
 function pinKey(k) {
   if (pinBuffer.length >= 4) return;
   pinBuffer += k; updateDots();
@@ -1822,6 +2000,7 @@ function checkPin() {
     else if (pinTarget === 'maint')  { maintUnlocked  = true; switchPage('maint'); }
     else if (pinTarget === 'funnel') { funnelUnlocked = true; switchPage('funnel'); }
     else if (pinTarget === 'leads')  { leadsUnlocked  = true; switchPage('leads'); }
+    else if (pinTarget === 'echant') { echantManager = true; updateEchantManagerUI(); switchPage('echantillons'); renderEchant(); }
     pinBuffer=''; updateDots();
   } else {
     updateDots(true); $('pin-error').textContent = 'Code incorrect — réessayez';
@@ -1944,23 +2123,53 @@ function exportConfigJson() {
 }
 
 async function loadConfigFromJson() {
+  // 1. Source de vérité : Firestore (config/app)
+  try {
+    await window.DB_READY;
+    if (window.FS) {
+      var snap = await window.FS.doc('config/app').get();
+      if (snap.exists) {
+        var d = snap.data();
+        if (d && typeof d === 'object') { window.APP_CFG = d; return; }
+      }
+    }
+  } catch(e) { console.warn('[config] Firestore indisponible, fallback', e); }
+  // 2. Fallback transition : ancien config.json
   try {
     var response = await fetch('./config.json?v='+Date.now());
-    if (!response.ok) {
-      window.APP_CFG = getDefaultConfig();
-      return;
+    if (response.ok) {
+      var remoteConfig = await response.json();
+      if (remoteConfig && typeof remoteConfig === 'object') { window.APP_CFG = remoteConfig; return; }
     }
-    var remoteConfig = await response.json();
-    if (!remoteConfig || typeof remoteConfig !== 'object') {
-      window.APP_CFG = getDefaultConfig();
-      return;
-    }
-    window.APP_CFG = remoteConfig;
-  } catch(e) {
-    window.APP_CFG = getDefaultConfig();
+  } catch(e) {}
+  // 3. Valeurs par défaut
+  window.APP_CFG = getDefaultConfig();
+}
+
+// Sauvegarde de la config dans le cloud (Firestore) — remplace l'export manuel
+async function saveConfigToCloud() {
+  saveConfig(); // synchronise window.APP_CFG depuis les champs du formulaire
+  var cfg = getCfg();
+  var btn = $('cfg-cloud-btn');
+  if (!window.FS) {
+    if (btn) { btn.textContent = '✕ Firebase indisponible'; setTimeout(function(){ btn.textContent = '☁ Sauvegarder dans le cloud'; }, 2500); }
+    return;
   }
-  // Fallback de sécurité — ne devrait jamais arriver
-  if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
+  if (btn) btn.textContent = '⏳ Sauvegarde…';
+  try {
+    await window.DB_READY;
+    await window.FS.doc('config/app').set(cfg);
+    if (btn) {
+      btn.textContent = '✓ Enregistré pour tous';
+      btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)';
+      setTimeout(function(){
+        btn.textContent = '☁ Sauvegarder dans le cloud';
+        btn.style.borderColor = ''; btn.style.color = '';
+      }, 2800);
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '✕ Erreur : '+(e.code||e.message); setTimeout(function(){ btn.textContent = '☁ Sauvegarder dans le cloud'; }, 3500); }
+  }
 }
 
 function getDefaultConfig() {
@@ -3043,6 +3252,8 @@ loadConfigFromJson().then(function(){
   calcProjet();
   initFunnel();
   initLeads();
+  startSharedSync();
+  initEchantillons();
 }).catch(function(){
   if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
   $('main-maint').innerHTML = buildSimulatorHTML('maint');
@@ -3056,6 +3267,8 @@ loadConfigFromJson().then(function(){
   calcProjet();
   initFunnel();
   initLeads();
+  startSharedSync();
+  initEchantillons();
 });
 validateFields();
 // ── Init appelle initFunnel après les déclarations ──
@@ -3320,6 +3533,12 @@ var leadsPending = null;
 // ── Storage ──
 function saveLeadsHistory() {
   try { localStorage.setItem('lasit-leads-history', JSON.stringify(leadsHistory)); } catch(e) {}
+  if (window.FS) {
+    window.DB_READY.then(function(){
+      window.FS.doc('shared/leads').set({ history: leadsHistory, updatedAt: Date.now() })
+        .catch(function(e){ console.warn('[leads] save cloud KO', e); });
+    });
+  }
 }
 function loadLeadsHistory() {
   try {
@@ -5247,6 +5466,12 @@ function confirmFunnelImport() {
 // ── Persistence ──
 function saveFunnelHistory() {
   try { localStorage.setItem('lasit-funnel-history', JSON.stringify(funnelHistory)); } catch(e){}
+  if (window.FS) {
+    window.DB_READY.then(function(){
+      window.FS.doc('shared/funnel').set({ history: funnelHistory, updatedAt: Date.now() })
+        .catch(function(e){ console.warn('[funnel] save cloud KO', e); });
+    });
+  }
 }
 
 function loadFunnelHistory() {
@@ -5290,6 +5515,59 @@ function importFunnelData(event) {
   reader.readAsText(file);
 }
 
+// ══════════════════════════════════════════════
+//  SYNCHRO TEMPS RÉEL PARTAGÉE (Funnel + Leads)
+// ══════════════════════════════════════════════
+var _syncStarted = false;
+function startSharedSync() {
+  if (_syncStarted || !window.FS) return;
+  _syncStarted = true;
+  window.DB_READY.then(function(){
+    // ── Funnel ──
+    window.FS.doc('shared/funnel').onSnapshot(function(snap){
+      if (!snap.exists) {
+        // Première fois : amorcer le cloud depuis le local si on a des données
+        if (funnelHistory && Object.keys(funnelHistory).length) {
+          window.FS.doc('shared/funnel').set({ history: funnelHistory, updatedAt: Date.now() }).catch(function(){});
+        }
+        return;
+      }
+      var d = snap.data();
+      if (d && d.history && typeof d.history === 'object') {
+        funnelHistory = d.history;
+        try { localStorage.setItem('lasit-funnel-history', JSON.stringify(funnelHistory)); } catch(e){}
+        var months = sortedMonths();
+        if (!funnelMonth && months.length) funnelMonth = months[months.length-1];
+        if (typeof renderMonthPills==='function') renderMonthPills();
+        if (funnelMonth) {
+          if (typeof renderFunnelDashboard==='function') renderFunnelDashboard();
+          if (typeof renderFunnelComm==='function') renderFunnelComm();
+          if (typeof renderFunnelAlerts==='function') renderFunnelAlerts();
+        }
+        var fe=$('funnel-empty'); if (fe && months.length) fe.style.display='none';
+      }
+    }, function(e){ console.warn('[funnel] sync KO', e); });
+    // ── Leads ──
+    window.FS.doc('shared/leads').onSnapshot(function(snap){
+      if (!snap.exists) {
+        if (leadsHistory && Object.keys(leadsHistory).length) {
+          window.FS.doc('shared/leads').set({ history: leadsHistory, updatedAt: Date.now() }).catch(function(){});
+        }
+        return;
+      }
+      var d = snap.data();
+      if (d && d.history && typeof d.history === 'object') {
+        leadsHistory = d.history;
+        try { localStorage.setItem('lasit-leads-history', JSON.stringify(leadsHistory)); } catch(e){}
+        var lm = sortedLeadsMonths();
+        if (!leadsMonth && lm.length) leadsMonth = lm[lm.length-1];
+        if (typeof renderLeadsMonthPills==='function') renderLeadsMonthPills();
+        if (typeof renderLeadsDashboard==='function') renderLeadsDashboard();
+      }
+    }, function(e){ console.warn('[leads] sync KO', e); });
+  });
+}
+
 // ── Init funnel ──
 function initFunnel() {
   loadFunnelHistory();
@@ -5305,6 +5583,199 @@ function initFunnel() {
   var now = new Date();
   var m = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   if ($('funnel-import-month')) $('funnel-import-month').value = m;
+}
+
+// ══════════════════════════════════════════════
+//  ÉCHANTILLONS (demandes de tests laser)
+// ══════════════════════════════════════════════
+var echantManager = false;
+var echUrg  = 'normale';
+var echTab  = 'attente';
+var echItems = { attente: [], envoi: [] };
+var _echUnsub = null;
+
+function echToast(msg, d){ d=d||2600; var t=$('ech-toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');}, d); }
+function echEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function echUid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function echFmtDate(ts){ if(!ts) return ''; var d=new Date(ts); var p=function(n){return String(n).padStart(2,'0');}; return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+function echUrgTxt(v){ return v==='haute'?'Haute':v==='basse'?'Basse':'Normale'; }
+
+function echSetUrg(v, el){ echUrg=v; document.querySelectorAll('#view-echantillons .ech-urg-btn').forEach(function(b){b.classList.remove('on');}); el.classList.add('on'); }
+
+function echNextLabel(){
+  var now=new Date(), wd=now.getDay(), best=8;
+  [1,3].forEach(function(s){ var d=(s-wd+7)%7||7; if(d<best)best=d; });
+  var nx=new Date(now); nx.setDate(now.getDate()+best);
+  var j=['dim','lun','mar','mer','jeu','ven','sam'][nx.getDay()];
+  return 'Prochain créneau '+j+'. '+nx.getDate()+'/'+(nx.getMonth()+1)+' · 14h';
+}
+
+function populateEchantCommerciaux(){
+  var sel=$('ech-com'); if(!sel) return;
+  var cur=sel.value;
+  var c=(getCfg().commerciaux)||{};
+  var opts='<option value="">— Choisir —</option>';
+  for(var i=1;i<=5;i++){ var n=c[i]&&c[i].trim(); if(n && !/^Commercial \d$/.test(n)) opts+='<option>'+echEsc(n)+'</option>'; }
+  sel.innerHTML=opts; if(cur) sel.value=cur;
+}
+
+function initEchantillons(){
+  if($('ech-next')) $('ech-next').textContent = echNextLabel();
+  populateEchantCommerciaux();
+  updateEchantManagerUI();
+  echStartListener();
+  echCheckAutoReset();
+}
+
+function echStartListener(){
+  if(!window.FS){ renderEchant(); return; }
+  if(_echUnsub) return;
+  window.DB_READY.then(function(){
+    _echUnsub = window.FS.collection('demandes').onSnapshot(function(snap){
+      var att=[], env=[];
+      snap.forEach(function(doc){
+        var d=doc.data(); d.id=doc.id;
+        if(d.statut==='envoi') env.push(d); else if(d.statut==='attente') att.push(d);
+      });
+      var byOrdre=function(a,b){ return (a.ordre||0)-(b.ordre||0); };
+      att.sort(byOrdre); env.sort(byOrdre);
+      echItems.attente=att; echItems.envoi=env;
+      echUpdateCounts(); renderEchant();
+    }, function(e){ console.warn('[echant] listener KO', e); });
+  });
+}
+
+function echUpdateCounts(){
+  if($('ech-n-attente')) $('ech-n-attente').textContent = echItems.attente.length;
+  if($('ech-n-envoi'))   $('ech-n-envoi').textContent   = echItems.envoi.length;
+}
+
+function echSwitchTab(tab){
+  echTab=tab;
+  if($('ech-tab-attente')) $('ech-tab-attente').classList.toggle('on', tab==='attente');
+  if($('ech-tab-envoi'))   $('ech-tab-envoi').classList.toggle('on', tab==='envoi');
+  renderEchant();
+}
+
+function echToggleManager(){
+  if(echantManager){ echantManager=false; updateEchantManagerUI(); renderEchant(); return; }
+  pinTarget='echant'; pinBuffer=''; updateDots(); if($('pin-error')) $('pin-error').textContent='';
+  $('pin-overlay').classList.remove('hidden');
+}
+
+function updateEchantManagerUI(){
+  var btn=$('ech-mgr-btn');
+  if(btn){ btn.classList.toggle('on', echantManager); btn.textContent = echantManager ? '🔓 Gestion active' : '🔒 Mode gestion'; }
+  var bar=$('ech-actbar');
+  if(bar) bar.style.display = echantManager ? 'flex' : 'none';
+}
+
+function renderEchant(){
+  var el=$('ech-list'); if(!el) return;
+  var list = echItems[echTab]||[];
+  var vb=$('ech-valider-btn'), eb=$('ech-email-btn');
+  if(vb) vb.textContent = echTab==='attente' ? '✓ Établir la liste finale' : '↩ Remettre en demandes reçues';
+  if(eb) eb.style.display = (echTab==='envoi') ? 'inline-block' : 'none';
+  if(list.length===0){
+    el.innerHTML='<div class="ech-empty"><div class="ico">📭</div>'+(echTab==='attente'?'Aucune demande pour l\'instant.':'Aucune liste validée.')+'</div>';
+    return;
+  }
+  var showCtrl = echantManager && echTab==='attente';
+  el.innerHTML = list.map(function(d,i){
+    return '<div class="ech-item">'+
+      '<div class="ech-rank">#'+(i+1)+'</div>'+
+      '<div class="ech-item-bd"><div class="ech-client">'+echEsc(d.client)+'</div>'+
+      '<div class="ech-meta"><span class="ech-tag">'+echEsc(d.commercial)+'</span>'+
+      '<span class="ech-tag-u '+d.urgence+'">'+echUrgTxt(d.urgence)+'</span>'+
+      '<span class="ech-date">'+echFmtDate(d.dateCreation)+'</span></div></div>'+
+      (showCtrl ? '<div class="ech-ctrl">'+
+        '<button class="ech-cbtn" onclick="echMove(\''+d.id+'\',-1)" '+(i===0?'disabled':'')+'>↑</button>'+
+        '<button class="ech-cbtn" onclick="echMove(\''+d.id+'\',1)" '+(i===list.length-1?'disabled':'')+'>↓</button>'+
+        '<button class="ech-cbtn del" onclick="echDel(\''+d.id+'\')">×</button>'+
+      '</div>' : '')+
+    '</div>';
+  }).join('');
+}
+
+function echAdd(){
+  var com=$('ech-com').value, client=$('ech-client').value.trim(), tracking=$('ech-tracking').checked;
+  if(!com){ echToast('⚠ Sélectionne un commercial'); return; }
+  if(!client){ echToast('⚠ Saisis le nom du client'); return; }
+  if(!tracking){ echToast('⚠ Vérifie le tracking avant de soumettre'); return; }
+  if(!window.FS){ echToast('⚠ Firebase indisponible'); return; }
+  var maxOrdre = echItems.attente.reduce(function(m,d){ return Math.max(m, d.ordre||0); }, 0);
+  window.DB_READY.then(function(){
+    window.FS.collection('demandes').doc(echUid()).set({
+      commercial:com, client:client, urgence:echUrg, statut:'attente', ordre:maxOrdre+1, dateCreation:Date.now()
+    }).then(function(){
+      $('ech-client').value=''; $('ech-tracking').checked=false; $('ech-check-row').classList.remove('on');
+      echToast('✓ Demande ajoutée');
+      if(echTab!=='attente') echSwitchTab('attente');
+    }).catch(function(e){ echToast('Erreur : '+(e.code||e.message)); });
+  });
+}
+
+function echMove(id, dir){
+  var list=echItems.attente, idx=list.findIndex(function(d){return d.id===id;}), other=list[idx+dir];
+  if(!other||!window.FS) return;
+  var ao=list[idx].ordre||idx, bo=other.ordre||(idx+dir);
+  window.FS.collection('demandes').doc(id).update({ordre:bo});
+  window.FS.collection('demandes').doc(other.id).update({ordre:ao});
+}
+
+function echDel(id){
+  if(!window.FS) return;
+  window.FS.collection('demandes').doc(id).delete().then(function(){ echToast('Demande supprimée'); });
+}
+
+function echValider(){
+  var list=echItems[echTab];
+  if(!list.length){ echToast('Liste vide'); return; }
+  if(!window.FS) return;
+  var target = echTab==='attente' ? 'envoi' : 'attente';
+  Promise.all(list.map(function(d){ return window.FS.collection('demandes').doc(d.id).update({statut:target}); }))
+    .then(function(){
+      echToast(target==='envoi' ? '✓ Liste établie — '+list.length+' demande(s)' : 'Liste remise en demandes reçues');
+      echSwitchTab(target);
+    }).catch(function(e){ echToast('Erreur : '+(e.code||e.message)); });
+}
+
+function echEmail(){
+  var list=echItems.envoi;
+  if(!list.length){ echToast('Liste vide'); return; }
+  var now=new Date(), p=function(n){return String(n).padStart(2,'0');};
+  var dateStr=p(now.getDate())+'/'+p(now.getMonth()+1)+'/'+now.getFullYear();
+  var lignes=list.map(function(d,i){ return (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')'; }).join('\n');
+  var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser pour ce jalon :\n\n'+lignes+'\n\nCordialement,\nVincent';
+  var url='mailto:vincent.vandomme@lasitlaser.fr?subject='+encodeURIComponent('Demandes échantillons LASIT France — '+dateStr)+'&body='+encodeURIComponent(corps);
+  window.location.href=url;
+}
+
+// ── Auto-reset : Lundi 14h et Mercredi 14h (heure locale) ──
+function echLastResetSlot(){
+  var now=new Date(), best=null;
+  for(var w=0;w<=1;w++){ [[1,14],[3,14]].forEach(function(pair){
+    var d=new Date(now); var diff=(now.getDay()-pair[0]+7)%7;
+    d.setDate(now.getDate()-diff-w*7); d.setHours(pair[1],0,0,0);
+    if(d<=now && (!best||d>best)) best=d;
+  }); }
+  return best?best.getTime():0;
+}
+function echCheckAutoReset(){
+  if(!window.FS) return;
+  window.DB_READY.then(function(){
+    window.FS.doc('shared/echant_reset').get().then(function(snap){
+      var lastReset = (snap.exists && snap.data().lastReset) || 0;
+      var shouldReset = echLastResetSlot();
+      if(lastReset >= shouldReset) return;
+      window.FS.doc('shared/echant_reset').set({lastReset:shouldReset});
+      window.FS.collection('demandes').get().then(function(qs){
+        var n=0;
+        qs.forEach(function(doc){ window.FS.collection('demandes').doc(doc.id).delete(); n++; });
+        if(n>0) echToast('↺ Remise à zéro automatique — '+n+' demande(s)', 4000);
+      });
+    }).catch(function(e){ console.warn('[echant] reset KO', e); });
+  });
 }
 
 // ── Version footer ──
