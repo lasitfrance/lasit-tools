@@ -1307,6 +1307,7 @@
   .ech-tag-u.normale { color:#f59e0b; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); }
   .ech-tag-u.basse { color:var(--green); background:var(--green-bg); border:1px solid var(--green-border); }
   .ech-date { font:400 11px 'DM Mono',monospace; color:var(--text3); }
+  .ech-note-txt { margin-top:7px; font-size:12.5px; color:var(--text2); line-height:1.45; background:var(--bg3); border-left:2px solid var(--ech); border-radius:4px; padding:5px 9px; white-space:pre-wrap; word-break:break-word; }
   .ech-ctrl { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
   .ech-cbtn { width:27px; height:27px; border-radius:6px; border:1px solid var(--border2); background:var(--bg3); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:14px; transition:all .1s; }
   .ech-cbtn:hover:not(:disabled) { background:var(--bg4); color:var(--text); }
@@ -1406,6 +1407,10 @@
               <div class="ech-urg-btn normale on" data-v="normale" onclick="echSetUrg('normale',this)">🟡 Normale</div>
               <div class="ech-urg-btn basse" data-v="basse" onclick="echSetUrg('basse',this)">🟢 Basse</div>
             </div>
+          </div>
+          <div class="ech-field">
+            <label class="ech-lbl">Commentaire (optionnel)</label>
+            <textarea class="ech-input" id="ech-note" rows="2" placeholder="Ex : marquage sur inox, logo à graver, délai souhaité…" style="resize:vertical;min-height:40px;font-family:'Syne',sans-serif;"></textarea>
           </div>
           <div class="ech-field">
             <label class="ech-lbl">Vérification tracking</label>
@@ -5874,7 +5879,9 @@ function renderEchant(){
       '<div class="ech-item-bd"><div class="ech-client">'+echEsc(d.client)+'</div>'+
       '<div class="ech-meta"><span class="ech-tag">'+echEsc(d.commercial)+'</span>'+
       '<span class="ech-tag-u '+d.urgence+'">'+echUrgTxt(d.urgence)+'</span>'+
-      '<span class="ech-date">'+echFmtDate(d.dateCreation)+'</span></div></div>'+
+      '<span class="ech-date">'+echFmtDate(d.dateCreation)+'</span></div>'+
+      (d.note ? '<div class="ech-note-txt">💬 '+echEsc(d.note)+'</div>' : '')+
+      '</div>'+
       (showCtrl ? '<div class="ech-ctrl">'+
         '<button class="ech-cbtn" onclick="echMove(\''+d.id+'\',-1)" '+(i===0?'disabled':'')+'>↑</button>'+
         '<button class="ech-cbtn" onclick="echMove(\''+d.id+'\',1)" '+(i===list.length-1?'disabled':'')+'>↓</button>'+
@@ -5887,6 +5894,7 @@ function renderEchant(){
 function echAdd(){
   if(echCycleState(new Date()).state==='cloturee'){ echToast('⚠ Demandes fermées pour ce créneau'); return; }
   var com=$('ech-com').value, client=$('ech-client').value.trim(), tracking=$('ech-tracking').checked;
+  var note=$('ech-note')?$('ech-note').value.trim():'';
   if(!com){ echToast('⚠ Sélectionne un commercial'); return; }
   if(!client){ echToast('⚠ Saisis le nom du client'); return; }
   if(!tracking){ echToast('⚠ Vérifie le tracking avant de soumettre'); return; }
@@ -5894,9 +5902,10 @@ function echAdd(){
   var maxOrdre = echItems.attente.reduce(function(m,d){ return Math.max(m, d.ordre||0); }, 0);
   window.DB_READY.then(function(){
     window.FS.collection('demandes').doc(echUid()).set({
-      commercial:com, client:client, urgence:echUrg, statut:'attente', ordre:maxOrdre+1, dateCreation:Date.now()
+      commercial:com, client:client, urgence:echUrg, note:note, statut:'attente', ordre:maxOrdre+1, dateCreation:Date.now()
     }).then(function(){
       $('ech-client').value=''; $('ech-tracking').checked=false; $('ech-check-row').classList.remove('on');
+      if($('ech-note')) $('ech-note').value='';
       echToast('✓ Demande ajoutée');
       if(echTab!=='attente') echSwitchTab('attente');
     }).catch(function(e){ echToast('Erreur : '+(e.code||e.message)); });
@@ -5933,7 +5942,11 @@ function echDest(){ return ((getCfg().emailEmanuele||'').trim()) || ECH_EMAIL_TO
 function echEmail(){
   var list=echItems.envoi;
   if(!list.length){ echToast('Liste vide'); return; }
-  var lignes=list.map(function(d,i){ return (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')'; }).join('\n');
+  var lignes=list.map(function(d,i){
+    var l = (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')';
+    if(d.note) l += '\n   Commentaire : '+d.note;
+    return l;
+  }).join('\n');
   var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser :\n\n'+lignes+'\n\nCordialement,\nVincent';
   var subj='Demandes échantillons LASIT France';
   if($('ech-mail-to')) $('ech-mail-to').textContent = echDest();
