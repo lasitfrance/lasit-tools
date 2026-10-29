@@ -37,6 +37,13 @@
     })();
   </script>
 
+  <!-- ══════════════ EMAILJS ══════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    try { if (window.emailjs) emailjs.init({ publicKey: "ERBHl8OeZVnj8osLf" }); }
+    catch(e) { console.warn('[EmailJS] init', e); }
+  </script>
+
   <style>
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     :root {
@@ -1347,6 +1354,18 @@
   .ech-lock-ico { font-size:30px; margin-bottom:10px; opacity:.85; }
   .ech-lock-title { font-size:16px; font-weight:700; color:var(--red); }
   .ech-lock-sub { font-size:12px; color:var(--text2); font-family:DM Mono,monospace; margin-top:5px; }
+  /* ── Modal email ── */
+  .ech-modal { position:fixed; inset:0; background:rgba(23,32,51,.45); backdrop-filter:blur(3px); z-index:600; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .ech-modal-box { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); width:520px; max-width:100%; box-shadow:0 20px 60px rgba(16,32,52,.2); overflow:hidden; }
+  .ech-modal-hd { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .ech-modal-title { font-size:15px; font-weight:700; color:var(--text); }
+  .ech-modal-x { background:none; border:none; font-size:22px; line-height:1; color:var(--text3); cursor:pointer; }
+  .ech-modal-field { padding:12px 20px 0; }
+  .ech-modal-lbl { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); font-family:DM Mono,monospace; margin-bottom:5px; }
+  .ech-modal-val { font-size:13px; color:var(--text); background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:8px 11px; }
+  .ech-modal-body { width:100%; height:180px; resize:vertical; font:13px/1.5 'DM Mono',monospace; color:var(--text); background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; outline:none; margin-top:0; box-sizing:border-box; }
+  .ech-modal-actions { display:flex; gap:8px; justify-content:flex-end; padding:16px 20px; flex-wrap:wrap; }
+  .ech-abtn.pri[href] { text-decoration:none; display:inline-flex; align-items:center; }
 </style>
 <div class="view" id="view-echantillons">
   <main class="ech-main">
@@ -1420,6 +1439,24 @@
   </main>
 </div>
 <div class="ech-toast" id="ech-toast"></div>
+
+<!-- Fenêtre email Emanuele -->
+<div class="ech-modal" id="ech-email-modal" style="display:none;">
+  <div class="ech-modal-box">
+    <div class="ech-modal-hd">
+      <div class="ech-modal-title">✉ Email à Emanuele</div>
+      <button class="ech-modal-x" onclick="echCloseEmail()">×</button>
+    </div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Destinataire</span><div class="ech-modal-val" id="ech-mail-to"></div></div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Objet</span><div class="ech-modal-val" id="ech-mail-subj"></div></div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Message</span><textarea class="ech-modal-body" id="ech-mail-body" readonly></textarea></div>
+    <div class="ech-modal-actions">
+      <button class="ech-abtn" onclick="echCloseEmail()">Fermer</button>
+      <button class="ech-abtn" id="ech-copy-btn" onclick="echCopyEmail()">📋 Copier le texte</button>
+      <button class="ech-abtn pri" id="ech-send-btn" onclick="echSend()">✉ Envoyer maintenant</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════
      PAGE CONFIGURATION
@@ -5879,6 +5916,7 @@ function echValider(){
     }).catch(function(e){ echToast('Erreur : '+(e.code||e.message)); });
 }
 
+var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // ← remplacer par l'adresse d'Emanuele
 function echEmail(){
   var list=echItems.envoi;
   if(!list.length){ echToast('Liste vide'); return; }
@@ -5886,8 +5924,47 @@ function echEmail(){
   var dateStr=p(now.getDate())+'/'+p(now.getMonth()+1)+'/'+now.getFullYear();
   var lignes=list.map(function(d,i){ return (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')'; }).join('\n');
   var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser pour ce jalon :\n\n'+lignes+'\n\nCordialement,\nVincent';
-  var url='mailto:vincent.vandomme@lasitlaser.fr?subject='+encodeURIComponent('Demandes échantillons LASIT France — '+dateStr)+'&body='+encodeURIComponent(corps);
-  window.location.href=url;
+  var subj='Demandes échantillons LASIT France — '+dateStr;
+  if($('ech-mail-to')) $('ech-mail-to').textContent = ECH_EMAIL_TO;
+  if($('ech-mail-subj')) $('ech-mail-subj').textContent = subj;
+  if($('ech-mail-body')) $('ech-mail-body').value = corps;
+  if($('ech-email-modal')) $('ech-email-modal').style.display='flex';
+}
+
+// Identifiants EmailJS
+var EMAILJS_SERVICE='service_il4k8e9', EMAILJS_TEMPLATE='template_c3qlyj9';
+function echSend(){
+  if(typeof emailjs==='undefined'){ echToast('⚠ EmailJS non chargé — réessayez'); return; }
+  var btn=$('ech-send-btn');
+  var subj = $('ech-mail-subj') ? $('ech-mail-subj').textContent : '';
+  var corps = $('ech-mail-body') ? $('ech-mail-body').value : '';
+  if(btn){ btn.textContent='⏳ Envoi…'; btn.style.pointerEvents='none'; btn.style.opacity='.7'; }
+  emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    to_email: ECH_EMAIL_TO,
+    subject: subj,
+    message: corps.replace(/\n/g,'<br>')
+  }).then(function(){
+    echToast('✓ Email envoyé à '+ECH_EMAIL_TO, 3800);
+    echCloseEmail();
+  }).catch(function(err){
+    var m = (err && (err.text || err.message)) || ('statut '+(err&&err.status));
+    echToast('✕ Échec de l\'envoi : '+m, 5000);
+    console.error('[EmailJS] send', err);
+  }).finally(function(){
+    if(btn){ btn.textContent='✉ Envoyer maintenant'; btn.style.pointerEvents=''; btn.style.opacity=''; }
+  });
+}
+function echCloseEmail(){ if($('ech-email-modal')) $('ech-email-modal').style.display='none'; }
+function echCopyEmail(){
+  var txt = $('ech-mail-body') ? $('ech-mail-body').value : '';
+  function ok(){ var b=$('ech-copy-btn'); if(b){ b.textContent='✓ Copié !'; setTimeout(function(){ b.textContent='📋 Copier le texte'; },2000); } }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(function(){ echFallbackCopy(txt, ok); });
+  } else { echFallbackCopy(txt, ok); }
+}
+function echFallbackCopy(txt, cb){
+  try{ var t=$('ech-mail-body'); if(t){ t.removeAttribute('readonly'); t.select(); document.execCommand('copy'); t.setAttribute('readonly','readonly'); cb&&cb(); return; } }catch(e){}
+  echToast('Copie impossible — sélectionnez le texte manuellement');
 }
 
 // ── Auto-reset : Lundi 9h30 et Mercredi 9h30 (heure locale, après la sélection Italie à 8h30) ──
