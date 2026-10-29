@@ -509,7 +509,7 @@
         <div style="width:52px;height:52px;border-radius:12px;background:var(--green-bg);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">⚙️</div>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Calculateur Maintenance</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Estimez le coût d'une intervention de maintenance : technicien, déplacement, nuitées et repas inclus. <span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);">🔒 Accès restreint</span></div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Estimez le coût d'une intervention de maintenance : technicien, déplacement, nuitées et repas inclus.</div>
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
@@ -519,7 +519,7 @@
         <div style="width:52px;height:52px;border-radius:12px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📊</div>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Funnel Analyzer</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Analysez votre pipeline commercial mois par mois. Importez votre fichier Excel et visualisez les tendances par commercial. <span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);">🔒 Accès restreint</span></div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Analysez votre pipeline commercial mois par mois. Importez votre fichier Excel et visualisez les tendances par commercial.</div>
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
@@ -529,7 +529,7 @@
         <div style="width:52px;height:52px;border-radius:12px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🎯</div>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Lead Analyzer</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Analysez vos leads entrants, mesurez les taux de conversion et identifiez les meilleures sources. <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">🔒 Accès restreint</span></div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Analysez vos leads entrants, mesurez les taux de conversion et identifiez les meilleures sources.</div>
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
@@ -2045,24 +2045,9 @@ function toggleMesDetail() {
   panel.style.display   = open ? 'block' : 'none';
   chevron.style.transform = open ? 'rotate(180deg)' : '';
 }
-function openLeads() {
-  if (leadsUnlocked) { switchPage('leads'); return; }
-  pinTarget = 'leads';
-  pinBuffer = ''; updateDots(); $('pin-error').textContent = '';
-  $('pin-overlay').classList.remove('hidden');
-}
-function openFunnel() {
-  if (funnelUnlocked) { switchPage('funnel'); return; }
-  pinTarget = 'funnel';
-  pinBuffer = ''; updateDots(); $('pin-error').textContent = '';
-  $('pin-overlay').classList.remove('hidden');
-}
-function openMaint() {
-  if (maintUnlocked) { switchPage('maint'); return; }
-  pinTarget = 'maint';
-  pinBuffer = ''; updateDots(); $('pin-error').textContent = '';
-  $('pin-overlay').classList.remove('hidden');
-}
+function openLeads()  { switchPage('leads'); }
+function openFunnel() { switchPage('funnel'); }
+function openMaint()  { switchPage('maint'); }
 function openConfig() {
   if (configUnlocked) { switchPage('config'); return; }
   pinTarget = 'config';
