@@ -1413,6 +1413,12 @@
               <input type="checkbox" id="ech-tracking" onchange="document.getElementById('ech-check-row').classList.toggle('on',this.checked)">
               <span class="ct"><b>L'échantillon à tester est bien arrivé en Italie</b><span>J'ai vérifié le numéro de tracking avant de faire cette demande</span></span>
             </label>
+            <div style="margin-top:8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);display:flex;align-items:center;gap:8px;">
+              <span>Vérifier le suivi :</span>
+              <a href="https://www.dhl.com/fr-fr/home/suivi.html" target="_blank" rel="noopener" style="color:var(--ech);text-decoration:none;font-weight:600;">DHL ↗</a>
+              <span>·</span>
+              <a href="https://www.dpd.com/fr/fr/recevoir-des-colis/" target="_blank" rel="noopener" style="color:var(--ech);text-decoration:none;font-weight:600;">DPD ↗</a>
+            </div>
           </div>
           <div class="ech-field">
             <button class="ech-add" onclick="echAdd()">+ Ajouter la demande</button>
