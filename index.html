@@ -2171,7 +2171,9 @@ function checkAppPassword() {
   if (val === expected) {
     var overlay = $('app-lock-overlay');
     if (overlay) overlay.style.display = 'none';
-    sessionStorage.setItem('app-unlocked', '1');
+    // On mémorise le mot de passe utilisé : si l'admin le change dans le cloud,
+    // la comparaison échouera au prochain chargement et la saisie sera redemandée.
+    try { localStorage.setItem('app-unlocked', expected); } catch(e) {}
   } else {
     var err = $('app-password-error');
     if (err) err.textContent = 'Mot de passe incorrect';
@@ -2180,7 +2182,12 @@ function checkAppPassword() {
 }
 
 function initAppLock() {
-  if (sessionStorage.getItem('app-unlocked') === '1') {
+  var unlocked = false;
+  try {
+    var current = getCfg().appPassword || APP_PASSWORD_DEFAULT;
+    unlocked = localStorage.getItem('app-unlocked') === current;
+  } catch(e) {}
+  if (unlocked) {
     var overlay = $('app-lock-overlay');
     if (overlay) overlay.style.display = 'none';
     return;
