@@ -1796,6 +1796,19 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       ÉCHANTILLONS
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-label">🧪 Échantillons</div>
+    <div class="card">
+      <div class="field-row" style="padding-top:0;">
+        <div><div class="frl" style="font-size:12px;">Email destinataire (Italie)</div><div class="frh">Adresse qui reçoit la liste d'échantillons — Emanuele</div></div>
+        <div class="frr"><input type="text" class="inline-num" id="cfg-email-emanuele" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        SÉCURITÉ
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -2121,6 +2134,7 @@ function loadConfig() {
   set('cfg-seuil-ok',          cfg.seuilOk);
   set('cfg-remise-hq',         cfg.remiseHQ);
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
+  if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   var comms = cfg.commerciaux || {};
   $('cfg-comm-1') && ($('cfg-comm-1').value = comms[1] || '');
   $('cfg-comm-2') && ($('cfg-comm-2').value = comms[2] || '');
@@ -2272,6 +2286,7 @@ function getDefaultConfig() {
     dej: 20,
     diner: 30,
     objectifAnnuel: 1800000,
+    emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
     tech: {
       cisley: { nom:'Cisley TONI', salaire:50000, leasing:882,  peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
@@ -2300,6 +2315,7 @@ function saveConfig() {
     seuilOk:          vn('cfg-seuil-ok'),
     remiseHQ:         vn('cfg-remise-hq'),
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
+    emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
     commerciaux: {
       1: $('cfg-comm-1') ? $('cfg-comm-1').value.trim() : 'Vincent VANDOMME',
       2: $('cfg-comm-2') ? $('cfg-comm-2').value.trim() : 'Jean AVENAS',
@@ -5914,14 +5930,15 @@ function echValider(){
     }).catch(function(e){ echToast('Erreur : '+(e.code||e.message)); });
 }
 
-var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // ← remplacer par l'adresse d'Emanuele
+var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // repli si le champ Config est vide
+function echDest(){ return ((getCfg().emailEmanuele||'').trim()) || ECH_EMAIL_TO; }
 function echEmail(){
   var list=echItems.envoi;
   if(!list.length){ echToast('Liste vide'); return; }
   var lignes=list.map(function(d,i){ return (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')'; }).join('\n');
   var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser :\n\n'+lignes+'\n\nCordialement,\nVincent';
   var subj='Demandes échantillons LASIT France';
-  if($('ech-mail-to')) $('ech-mail-to').textContent = ECH_EMAIL_TO;
+  if($('ech-mail-to')) $('ech-mail-to').textContent = echDest();
   if($('ech-mail-subj')) $('ech-mail-subj').textContent = subj;
   if($('ech-mail-body')) $('ech-mail-body').value = corps;
   if($('ech-email-modal')) $('ech-email-modal').style.display='flex';
@@ -5936,7 +5953,7 @@ function echSend(){
   var corps = $('ech-mail-body') ? $('ech-mail-body').value : '';
   if(btn){ btn.textContent='⏳ Envoi…'; btn.style.pointerEvents='none'; btn.style.opacity='.7'; }
   emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-    to_email: ECH_EMAIL_TO,
+    to_email: echDest(),
     subject: subj,
     message: corps
   }).then(function(){
