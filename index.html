@@ -5780,7 +5780,6 @@ var _echPrevState=null;
 function echTick(){
   var st=echCycleState(new Date());
   echRenderStatus(st); echRenderStepper(st); echApplyFormLock(st);
-  if(_echPrevState==='cloturee' && st.state==='ouverte') echCheckAutoReset(); // réouverture → reset
   _echPrevState=st.state;
 }
 
@@ -5799,7 +5798,6 @@ function initEchantillons(){
   populateEchantCommerciaux();
   updateEchantManagerUI();
   echStartListener();
-  echCheckAutoReset();
 }
 
 function echStartListener(){
@@ -5920,11 +5918,9 @@ var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // ← remplacer par l'adre
 function echEmail(){
   var list=echItems.envoi;
   if(!list.length){ echToast('Liste vide'); return; }
-  var now=new Date(), p=function(n){return String(n).padStart(2,'0');};
-  var dateStr=p(now.getDate())+'/'+p(now.getMonth()+1)+'/'+now.getFullYear();
   var lignes=list.map(function(d,i){ return (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')'; }).join('\n');
-  var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser pour ce jalon :\n\n'+lignes+'\n\nCordialement,\nVincent';
-  var subj='Demandes échantillons LASIT France — '+dateStr;
+  var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser :\n\n'+lignes+'\n\nCordialement,\nVincent';
+  var subj='Demandes échantillons LASIT France';
   if($('ech-mail-to')) $('ech-mail-to').textContent = ECH_EMAIL_TO;
   if($('ech-mail-subj')) $('ech-mail-subj').textContent = subj;
   if($('ech-mail-body')) $('ech-mail-body').value = corps;
@@ -5942,10 +5938,11 @@ function echSend(){
   emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
     to_email: ECH_EMAIL_TO,
     subject: subj,
-    message: corps.replace(/\n/g,'<br>')
+    message: corps
   }).then(function(){
-    echToast('✓ Email envoyé à '+ECH_EMAIL_TO, 3800);
+    echToast('✓ Email envoyé — liste remise à zéro', 4000);
     echCloseEmail();
+    echResetApresEnvoi(); // remise à zéro déclenchée par l'envoi
   }).catch(function(err){
     var m = (err && (err.text || err.message)) || ('statut '+(err&&err.status));
     echToast('✕ Échec de l\'envoi : '+m, 5000);
@@ -5953,6 +5950,14 @@ function echSend(){
   }).finally(function(){
     if(btn){ btn.textContent='✉ Envoyer maintenant'; btn.style.pointerEvents=''; btn.style.opacity=''; }
   });
+}
+
+// Remise à zéro après envoi : vide toutes les demandes (reçues + validées)
+function echResetApresEnvoi(){
+  if(!window.FS) return;
+  window.FS.collection('demandes').get().then(function(qs){
+    qs.forEach(function(doc){ window.FS.collection('demandes').doc(doc.id).delete().catch(function(){}); });
+  }).catch(function(e){ console.warn('[echant] reset après envoi', e); });
 }
 function echCloseEmail(){ if($('ech-email-modal')) $('ech-email-modal').style.display='none'; }
 function echCopyEmail(){
