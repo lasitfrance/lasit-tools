@@ -291,6 +291,7 @@
     .nav-btn.page-leads.active  { color:#f43f5e; border-color:rgba(244,63,94,.35);  background:rgba(244,63,94,.07); }
     .nav-btn.page-prix.active    { color:#f97316; border-color:rgba(249,115,22,.35);  background:rgba(249,115,22,.07); }
     .nav-btn.page-echant.active  { color:#0891B2; border-color:rgba(8,145,178,.35);  background:rgba(8,145,178,.08); }
+    .nav-btn.page-carnet.active  { color:#6366F1; border-color:rgba(99,102,241,.35);  background:rgba(99,102,241,.08); }
     .page-hero-inner.ship        { background:rgba(192,132,252,.07); border:1px solid rgba(192,132,252,.25); }
     .page-hero-title.ship        { color:#c084fc; }
     .page-hero-inner.prix        { background:rgba(249,115,22,.07);  border:1px solid rgba(249,115,22,.25); }
@@ -477,6 +478,8 @@
     <div class="nav-sep"></div>
     <button class="nav-btn page-echant" id="tab-echantillons" onclick="openEchantillons()">🧪 Échantillons</button>
     <div class="nav-sep"></div>
+    <button class="nav-btn page-carnet" id="tab-carnet" onclick="openCarnet()">📓 Carnet de bord</button>
+    <div class="nav-sep"></div>
     <button class="nav-btn page-config" id="tab-config" onclick="openConfig()">⚙ Configuration</button>
   </nav>
 </header>
@@ -540,6 +543,16 @@
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Demandes d'échantillons</div>
           <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos demandes de tests laser pour l'Italie. La liste est validée puis transmise à Emanuele, et se réinitialise chaque lundi et mercredi à 14h.</div>
+        </div>
+        <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
+      </button>
+
+      <!-- Carnet de bord -->
+      <button onclick="openCarnet()" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;transition:all .18s;text-align:left;" onmouseover="this.style.borderColor='rgba(99,102,241,.4)';this.style.background='rgba(99,102,241,.05)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg2)'">
+        <div style="width:52px;height:52px;border-radius:12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📓</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Carnet de bord</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos déplacements, nuits d'hôtel et lieu de travail par semaine. Synthèse automatique et vue d'équipe consolidée.</div>
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
@@ -1470,6 +1483,95 @@
 </div>
 
 <!-- ══════════════════════════════════════════
+     PAGE CARNET DE BORD
+══════════════════════════════════════════ -->
+<style>
+  :root { --cb:#6366F1; --cb-bg:rgba(99,102,241,.08); --cb-br:rgba(99,102,241,.28); }
+  .cb-main { max-width:1000px; margin:0 auto; padding:28px 40px 80px; }
+  @media(max-width:720px){ .cb-main{ padding:20px; } }
+  .cb-hero { display:flex; align-items:center; gap:16px; padding:20px 24px; border-radius:var(--radius-lg); background:var(--cb-bg); border:1px solid var(--cb-br); margin-bottom:20px; }
+  .cb-hero .ico { font-size:28px; }
+  .cb-hero h1 { font-size:20px; font-weight:700; color:var(--cb); letter-spacing:-.01em; }
+  .cb-hero .sub { font-size:11px; color:var(--text2); font-family:DM Mono,monospace; margin-top:3px; }
+  .cb-tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+  .cb-tab { padding:10px 18px; font:600 13px 'Syne',sans-serif; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; }
+  .cb-tab.on { color:var(--cb); border-bottom-color:var(--cb); }
+  .cb-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .cb-sel { background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); padding:9px 12px; color:var(--text); font:14px 'Syne',sans-serif; outline:none; }
+  .cb-sel:focus { border-color:var(--cb); }
+  .cb-weeknav { display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .cb-navbtn { width:32px; height:32px; border-radius:var(--radius); border:1px solid var(--border2); background:var(--bg2); cursor:pointer; color:var(--text); font-size:16px; line-height:1; }
+  .cb-navbtn:hover { background:var(--bg3); }
+  .cb-wklabel { font:600 13px 'DM Mono',monospace; color:var(--text); min-width:210px; text-align:center; }
+  .cb-today { font:600 11px 'DM Mono',monospace; color:var(--cb); background:var(--cb-bg); border:1px solid var(--cb-br); border-radius:var(--radius); padding:7px 12px; cursor:pointer; }
+  .cb-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:16px; }
+  .cb-card-hd { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .cb-card-hd h3 { font:700 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); }
+  .cb-addrow { font:600 11px 'Syne',sans-serif; color:var(--cb); background:var(--cb-bg); border:1px solid var(--cb-br); border-radius:var(--radius); padding:5px 11px; cursor:pointer; }
+  .cb-addrow:hover { opacity:.85; }
+  .cb-table { width:100%; border-collapse:collapse; }
+  .cb-table th { font:600 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.05em; color:var(--text3); text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .cb-table td { padding:4px 6px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .cb-table tbody tr:last-child td { border-bottom:none; }
+  .cb-in { width:100%; min-width:70px; background:transparent; border:1px solid transparent; border-radius:5px; padding:6px 8px; color:var(--text); font:13px 'Syne',sans-serif; outline:none; }
+  .cb-in:hover { border-color:var(--border); }
+  .cb-in:focus { border-color:var(--cb); background:var(--bg3); }
+  .cb-in.km { text-align:right; width:66px; min-width:50px; font-family:'DM Mono',monospace; }
+  select.cb-in { cursor:pointer; }
+  .cb-delrow { width:26px; height:26px; border:none; background:transparent; color:var(--red); cursor:pointer; font-size:16px; border-radius:5px; }
+  .cb-delrow:hover { background:var(--red-bg); }
+  .cb-empty { padding:18px 16px; text-align:center; color:var(--text3); font-size:13px; }
+  .cb-lieu { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; padding:14px 16px; }
+  @media(max-width:620px){ .cb-lieu{ grid-template-columns:repeat(2,1fr); } }
+  .cb-lieu-day label { display:block; font:600 10px 'DM Mono',monospace; text-transform:uppercase; color:var(--text3); margin-bottom:5px; }
+  .cb-lieu-day .d { color:var(--text3); font-weight:400; }
+  .cb-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:4px; }
+  @media(max-width:620px){ .cb-stats{ grid-template-columns:repeat(2,1fr); } }
+  .cb-stat { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; }
+  .cb-stat .v { font:700 22px 'DM Mono',monospace; color:var(--cb); line-height:1; }
+  .cb-stat .l { font-size:11px; color:var(--text2); margin-top:5px; }
+  .cb-eq-table { width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+  .cb-eq-table th, .cb-eq-table td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:right; font-family:'DM Mono',monospace; }
+  .cb-eq-table th { color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+  .cb-eq-table td:first-child, .cb-eq-table th:first-child { text-align:left; color:var(--text); white-space:nowrap; }
+  .cb-eq-sec { font:700 11px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--cb); margin:4px 0 10px; }
+</style>
+<div class="view" id="view-carnet">
+  <main class="cb-main">
+    <div class="cb-hero">
+      <div class="ico">📓</div>
+      <div><h1>Carnet de bord</h1><div class="sub">Déplacements · nuits d'hôtel · lieu de travail</div></div>
+    </div>
+    <div class="cb-tabs">
+      <div class="cb-tab on" id="cb-tab-saisie" onclick="cbSwitchTab('saisie')">Ma saisie</div>
+      <div class="cb-tab" id="cb-tab-equipe" onclick="cbSwitchTab('equipe')">Synthèse équipe</div>
+    </div>
+    <div id="cb-saisie">
+      <div class="cb-bar">
+        <select class="cb-sel" id="cb-emp" onchange="cbOnEmpChange(this.value)"></select>
+        <div class="cb-weeknav">
+          <button class="cb-navbtn" onclick="cbPrevWeek()" title="Semaine précédente">‹</button>
+          <div class="cb-wklabel" id="cb-wklabel">—</div>
+          <button class="cb-navbtn" onclick="cbNextWeek()" title="Semaine suivante">›</button>
+          <button class="cb-today" onclick="cbToday()">Cette semaine</button>
+        </div>
+      </div>
+      <div id="cb-week"></div>
+    </div>
+    <div id="cb-equipe" style="display:none;">
+      <div class="cb-bar">
+        <div class="cb-weeknav" style="margin-left:0;">
+          <button class="cb-navbtn" onclick="cbEqShift(-1)">‹</button>
+          <div class="cb-wklabel" id="cb-eq-year" style="min-width:80px;">2026</div>
+          <button class="cb-navbtn" onclick="cbEqShift(1)">›</button>
+        </div>
+      </div>
+      <div id="cb-equipe-content"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════
      PAGE CONFIGURATION
 ══════════════════════════════════════════ -->
 <div class="view" id="view-config">
@@ -1820,6 +1922,19 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       CARNET DE BORD
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-label">📓 Carnet de bord</div>
+    <div class="card">
+      <div class="field-row" style="padding-top:0;align-items:flex-start;">
+        <div><div class="frl" style="font-size:12px;">Employés</div><div class="frh">Un nom par ligne — apparaît dans le sélecteur du carnet de bord</div></div>
+        <div class="frr"><textarea id="cfg-employes" oninput="saveConfig()" rows="6" style="width:260px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;resize:vertical;outline:none;"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        SÉCURITÉ
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -2036,7 +2151,7 @@ function buildSimulatorHTML(ns) {
 //  NAVIGATION & PIN
 // ══════════════════════════════════════════════
 function switchPage(page) {
-  ['home','prix','maint','leads','funnel','echantillons','config'].forEach(p => {
+  ['home','prix','maint','leads','funnel','echantillons','carnet','config'].forEach(p => {
     const v = $(`view-${p}`);
     const t = $(`tab-${p}`);
     if (v) v.classList.toggle('active', p === page);
@@ -2066,6 +2181,7 @@ function openConfig() {
   $('pin-overlay').classList.remove('hidden');
 }
 function openEchantillons() { switchPage('echantillons'); renderEchant(); }
+function openCarnet() { switchPage('carnet'); cbEnter(); }
 function pinKey(k) {
   if (pinBuffer.length >= 4) return;
   pinBuffer += k; updateDots();
@@ -2131,6 +2247,7 @@ function loadConfig() {
   set('cfg-remise-hq',         cfg.remiseHQ);
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
+  if($('cfg-employes')) $('cfg-employes').value = (cfg.employes && cfg.employes.length ? cfg.employes : ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT']).join('\n');
   var comms = cfg.commerciaux || {};
   $('cfg-comm-1') && ($('cfg-comm-1').value = comms[1] || '');
   $('cfg-comm-2') && ($('cfg-comm-2').value = comms[2] || '');
@@ -2290,6 +2407,7 @@ function getDefaultConfig() {
     diner: 30,
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
+    employes: ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT'],
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
     tech: {
       cisley: { nom:'Cisley TONI', salaire:50000, leasing:882,  peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
@@ -2319,6 +2437,7 @@ function saveConfig() {
     remiseHQ:         vn('cfg-remise-hq'),
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
+    employes: $('cfg-employes') ? ($('cfg-employes').value.split('\n').map(function(s){return s.trim();}).filter(Boolean)) : ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT'],
     commerciaux: {
       1: $('cfg-comm-1') ? $('cfg-comm-1').value.trim() : 'Vincent VANDOMME',
       2: $('cfg-comm-2') ? $('cfg-comm-2').value.trim() : 'Jean AVENAS',
@@ -3351,6 +3470,7 @@ loadConfigFromJson().then(function(){
   initLeads();
   startSharedSync();
   initEchantillons();
+  initCarnet();
 }).catch(function(){
   if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
   $('main-maint').innerHTML = buildSimulatorHTML('maint');
@@ -3366,6 +3486,7 @@ loadConfigFromJson().then(function(){
   initLeads();
   startSharedSync();
   initEchantillons();
+  initCarnet();
 });
 validateFields();
 // ── Init appelle initFunnel après les déclarations ──
@@ -6025,6 +6146,253 @@ function echCheckAutoReset(){
       });
     }).catch(function(e){ console.warn('[echant] reset KO', e); });
   });
+}
+
+// ══════════════════════════════════════════════
+//  CARNET DE BORD
+// ══════════════════════════════════════════════
+var CB_MOYENS=['véhicule de fonction','véhicule de location','train','avion'];
+var CB_LIEUX=['Au bureau','En déplacement','En télétravail','En congés'];
+var CB_PAYS=['France','Italie','Suisse','Belgique','Autre'];
+var CB_JOURS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+var CB_MOIS_ABBR=['jan','fév','mar','avr','mai','jun','jui','aoû','sep','oct','nov','déc'];
+var cbEmp=null, cbWeek=null, cbData={weeks:{}}, cbAll={}, cbTab='saisie', cbEqYear=new Date().getFullYear();
+var _cbUnsub=null, _cbUnsubAll=null, _cbSaveT=null, _cbDirtyAt=0;
+
+function getEmployes(){ var e=getCfg().employes; return (e&&e.length)?e:['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT']; }
+function cbSlug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function cbAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function cbOpts(arr,sel){ return arr.map(function(o){ return '<option'+(o===sel?' selected':'')+'>'+cbAttr(o)+'</option>'; }).join(''); }
+
+// ── Semaines ISO ──
+function cbIsoWeek(d){
+  var date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  var day=(date.getUTCDay()+6)%7; date.setUTCDate(date.getUTCDate()-day+3);
+  var year=date.getUTCFullYear();
+  var firstThu=new Date(Date.UTC(year,0,4)); var fd=(firstThu.getUTCDay()+6)%7; firstThu.setUTCDate(firstThu.getUTCDate()-fd+3);
+  return { year:year, week:1+Math.round((date-firstThu)/(7*864e5)) };
+}
+function cbWeekKey(d){ var w=cbIsoWeek(d); return w.year+'-W'+String(w.week).padStart(2,'0'); }
+function cbMondayOfKey(key){
+  var m=String(key).match(/(\d+)-W(\d+)/); var year=+m[1], week=+m[2];
+  var jan4=new Date(Date.UTC(year,0,4)); var d=(jan4.getUTCDay()+6)%7;
+  var mon=new Date(jan4); mon.setUTCDate(jan4.getUTCDate()-d+(week-1)*7);
+  return mon;
+}
+function cbDayDate(key,idx){ var mon=cbMondayOfKey(key); var d=new Date(mon); d.setUTCDate(mon.getUTCDate()+idx); return d; }
+function cbWeekLabel(key){
+  var m=String(key).match(/(\d+)-W(\d+)/); var mon=cbMondayOfKey(key), fri=cbDayDate(key,4);
+  var M=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+  return 'S'+(+m[2])+' · '+mon.getUTCDate()+' '+M[mon.getUTCMonth()]+' – '+fri.getUTCDate()+' '+M[fri.getUTCMonth()]+' '+fri.getUTCFullYear();
+}
+function cbShiftWeek(delta){
+  var mon=cbMondayOfKey(cbWeek); mon.setUTCDate(mon.getUTCDate()+delta*7);
+  cbWeek=cbWeekKey(new Date(mon.getUTCFullYear(),mon.getUTCMonth(),mon.getUTCDate()));
+  cbRenderWeek();
+}
+function cbPrevWeek(){ cbShiftWeek(-1); }
+function cbNextWeek(){ cbShiftWeek(1); }
+function cbToday(){ cbWeek=cbWeekKey(new Date()); cbRenderWeek(); }
+function cbDefaultDate(){ var mon=cbMondayOfKey(cbWeek); return mon.getUTCFullYear()+'-'+String(mon.getUTCMonth()+1).padStart(2,'0')+'-'+String(mon.getUTCDate()).padStart(2,'0'); }
+
+// ── Données ──
+function cbWeekData(){
+  if(!cbData.weeks) cbData.weeks={};
+  var w=cbData.weeks[cbWeek];
+  if(!w){ w=cbData.weeks[cbWeek]={deplacements:[],nuits:[],lieu:{}}; }
+  if(!w.deplacements) w.deplacements=[]; if(!w.nuits) w.nuits=[]; if(!w.lieu) w.lieu={};
+  return w;
+}
+function cbSave(){
+  _cbDirtyAt=Date.now();
+  if(!window.FS||!cbEmp) return;
+  clearTimeout(_cbSaveT);
+  var emp=cbEmp, weeks=cbData.weeks;
+  _cbSaveT=setTimeout(function(){
+    window.DB_READY.then(function(){
+      window.FS.collection('carnet').doc(cbSlug(emp)).set({ employe:emp, weeks:weeks, updatedAt:Date.now() })
+        .catch(function(e){ console.warn('[carnet] save', e); });
+    });
+  }, 700);
+}
+function cbAddDep(){ cbWeekData().deplacements.push({date:cbDefaultDate(),moyen:CB_MOYENS[0],dep:'',arr:'',km:'',client:''}); cbRenderWeek(); cbSave(); }
+function cbDelDep(i){ cbWeekData().deplacements.splice(i,1); cbRenderWeek(); cbSave(); }
+function cbEditDep(i,f,v){ var a=cbWeekData().deplacements; if(a[i]){ a[i][f]=v; cbSave(); cbRenderStats(); } }
+function cbAddNuit(){ cbWeekData().nuits.push({date:cbDefaultDate(),hotel:'',ville:'',pays:'',nuits:'1'}); cbRenderWeek(); cbSave(); }
+function cbDelNuit(i){ cbWeekData().nuits.splice(i,1); cbRenderWeek(); cbSave(); }
+function cbEditNuit(i,f,v){ var a=cbWeekData().nuits; if(a[i]){ a[i][f]=v; cbSave(); cbRenderStats(); } }
+function cbSetLieu(j,v){ cbWeekData().lieu[j]=v; cbSave(); cbRenderStats(); }
+
+// ── Employé ──
+function cbPopulateEmp(){
+  var sel=$('cb-emp'); if(!sel) return;
+  var es=getEmployes(), cur=cbEmp;
+  sel.innerHTML=es.map(function(n){ return '<option'+(n===cur?' selected':'')+'>'+cbAttr(n)+'</option>'; }).join('');
+  if(cur && es.indexOf(cur)>=0) sel.value=cur;
+}
+function cbOnEmpChange(v){ cbSelectEmp(v); }
+function cbSelectEmp(name){
+  cbEmp=name; _cbDirtyAt=0;
+  if($('cb-emp')) $('cb-emp').value=name;
+  if(_cbUnsub){ try{_cbUnsub();}catch(e){} _cbUnsub=null; }
+  cbData={weeks:{}};
+  cbRenderWeek();
+  if(!window.FS) return;
+  window.DB_READY.then(function(){
+    if(cbEmp!==name) return;
+    _cbUnsub=window.FS.collection('carnet').doc(cbSlug(name)).onSnapshot(function(snap){
+      if(cbEmp!==name) return;
+      if(Date.now()-_cbDirtyAt<2500) return; // modifications locales en cours : on garde le modèle local
+      var d=snap.exists?snap.data():null;
+      cbData={weeks:(d&&d.weeks)||{}};
+      var ae=document.activeElement;
+      if(ae && ae.closest && ae.closest('#cb-week')) cbRenderStats(); else cbRenderWeek();
+    }, function(e){ console.warn('[carnet] écoute', e); });
+  });
+}
+
+// ── Rendu saisie ──
+function cbDepRow(d,i){
+  return '<tr>'+
+    '<td><input type="date" class="cb-in" value="'+cbAttr(d.date)+'" onchange="cbEditDep('+i+',\'date\',this.value)"></td>'+
+    '<td><select class="cb-in" style="min-width:178px;" onchange="cbEditDep('+i+',\'moyen\',this.value)">'+cbOpts(CB_MOYENS,d.moyen||CB_MOYENS[0])+'</select></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(d.dep)+'" oninput="cbEditDep('+i+',\'dep\',this.value)" placeholder="Départ"></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(d.arr)+'" oninput="cbEditDep('+i+',\'arr\',this.value)" placeholder="Arrivée"></td>'+
+    '<td><input class="cb-in km" inputmode="numeric" value="'+cbAttr(d.km)+'" oninput="cbEditDep('+i+',\'km\',this.value)" placeholder="0"></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(d.client)+'" oninput="cbEditDep('+i+',\'client\',this.value)" placeholder="Client / motif"></td>'+
+    '<td><button class="cb-delrow" title="Supprimer" onclick="cbDelDep('+i+')">×</button></td>'+
+  '</tr>';
+}
+function cbNuitRow(n,i){
+  return '<tr>'+
+    '<td><input type="date" class="cb-in" value="'+cbAttr(n.date)+'" onchange="cbEditNuit('+i+',\'date\',this.value)"></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(n.hotel)+'" oninput="cbEditNuit('+i+',\'hotel\',this.value)" placeholder="Hôtel"></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(n.ville)+'" oninput="cbEditNuit('+i+',\'ville\',this.value)" placeholder="Ville"></td>'+
+    '<td><select class="cb-in" onchange="cbEditNuit('+i+',\'pays\',this.value)"><option value="">—</option>'+cbOpts(CB_PAYS,n.pays||'')+'</select></td>'+
+    '<td><input class="cb-in km" inputmode="numeric" value="'+cbAttr(n.nuits)+'" oninput="cbEditNuit('+i+',\'nuits\',this.value)" placeholder="0"></td>'+
+    '<td><button class="cb-delrow" title="Supprimer" onclick="cbDelNuit('+i+')">×</button></td>'+
+  '</tr>';
+}
+function cbLieuHtml(w){
+  return '<div class="cb-lieu">'+CB_JOURS.map(function(j,idx){
+    var dd=cbDayDate(cbWeek,idx), v=w.lieu[j]||'';
+    return '<div class="cb-lieu-day"><label>'+j+' <span class="d">'+dd.getUTCDate()+'/'+(dd.getUTCMonth()+1)+'</span></label>'+
+      '<select class="cb-sel" style="width:100%;font-size:13px;padding:7px 8px;" onchange="cbSetLieu(\''+j+'\',this.value)">'+
+      '<option value=""'+(v?'':' selected')+'>—</option>'+cbOpts(CB_LIEUX,v)+'</select></div>';
+  }).join('')+'</div>';
+}
+function cbWeekStats(){
+  var w=cbWeekData();
+  return {
+    km: w.deplacements.reduce(function(s,d){ return s+(parseFloat(String(d.km).replace(',','.'))||0); },0),
+    trainavion: w.deplacements.filter(function(d){ return d.moyen==='train'||d.moyen==='avion'; }).length,
+    nuits: w.nuits.reduce(function(s,n){ return s+(parseInt(n.nuits)||0); },0),
+    tt: CB_JOURS.filter(function(j){ return w.lieu[j]==='En télétravail'; }).length
+  };
+}
+function cbRenderStats(){
+  var el=$('cb-statsbox'); if(!el) return;
+  var s=cbWeekStats();
+  el.innerHTML='<div class="cb-stats">'+
+    '<div class="cb-stat"><div class="v">'+Math.round(s.km)+'</div><div class="l">km parcourus</div></div>'+
+    '<div class="cb-stat"><div class="v">'+s.trainavion+'</div><div class="l">trajets train + avion</div></div>'+
+    '<div class="cb-stat"><div class="v">'+s.nuits+'</div><div class="l">nuits de découchage</div></div>'+
+    '<div class="cb-stat"><div class="v">'+s.tt+'</div><div class="l">jours de télétravail</div></div>'+
+  '</div>';
+}
+function cbRenderWeek(){
+  if(!cbWeek) cbWeek=cbWeekKey(new Date());
+  if($('cb-wklabel')) $('cb-wklabel').textContent=cbWeekLabel(cbWeek);
+  var el=$('cb-week'); if(!el) return;
+  if(!cbEmp){ el.innerHTML='<div class="cb-empty">Sélectionne un employé.</div>'; return; }
+  var w=cbWeekData(), dep=w.deplacements, nuits=w.nuits;
+  el.innerHTML=
+    '<div class="cb-card"><div class="cb-card-hd"><h3>Déplacements</h3><button class="cb-addrow" onclick="cbAddDep()">+ Ajouter</button></div>'+
+    (dep.length ? '<div style="overflow-x:auto;"><table class="cb-table"><thead><tr><th>Date</th><th>Moyen</th><th>Départ</th><th>Arrivée</th><th>Km</th><th>Client visité</th><th></th></tr></thead><tbody>'+dep.map(cbDepRow).join('')+'</tbody></table></div>'
+                : '<div class="cb-empty">Aucun déplacement cette semaine.</div>')+'</div>'+
+    '<div class="cb-card"><div class="cb-card-hd"><h3>Nuits d\'hôtel</h3><button class="cb-addrow" onclick="cbAddNuit()">+ Ajouter</button></div>'+
+    (nuits.length ? '<div style="overflow-x:auto;"><table class="cb-table"><thead><tr><th>Date</th><th>Hôtel</th><th>Ville</th><th>Pays</th><th>Nuits</th><th></th></tr></thead><tbody>'+nuits.map(cbNuitRow).join('')+'</tbody></table></div>'
+                  : '<div class="cb-empty">Aucune nuit d\'hôtel cette semaine.</div>')+'</div>'+
+    '<div class="cb-card"><div class="cb-card-hd"><h3>Lieu de travail</h3></div>'+cbLieuHtml(w)+'</div>'+
+    '<div id="cb-statsbox"></div>';
+  cbRenderStats();
+}
+
+// ── Synthèse équipe ──
+function cbMonthOf(dateStr, wk){
+  if(dateStr && /^\d{4}-\d{2}-\d{2}/.test(dateStr)){ var p=dateStr.split('-'); return {y:+p[0], m:+p[1]-1}; }
+  var mon=cbMondayOfKey(wk); return {y:mon.getUTCFullYear(), m:mon.getUTCMonth()};
+}
+function cbComputeTeam(year){
+  var months=[]; for(var i=0;i<12;i++) months.push({decouchage:0,trainavion:0,teletravail:0,km:0});
+  Object.keys(cbAll).forEach(function(k){
+    var weeks=(cbAll[k]&&cbAll[k].weeks)||{};
+    Object.keys(weeks).forEach(function(wk){
+      if(!/^\d{4}-W\d{2}$/.test(wk)) return;
+      var w=weeks[wk]||{};
+      (w.deplacements||[]).forEach(function(d){
+        var mo=cbMonthOf(d.date,wk); if(mo.y!==year) return;
+        if(d.moyen==='train'||d.moyen==='avion') months[mo.m].trainavion++;
+        months[mo.m].km += parseFloat(String(d.km).replace(',','.'))||0;
+      });
+      (w.nuits||[]).forEach(function(n){ var mo=cbMonthOf(n.date,wk); if(mo.y===year) months[mo.m].decouchage += parseInt(n.nuits)||0; });
+      CB_JOURS.forEach(function(j,idx){
+        if((w.lieu||{})[j]==='En télétravail'){ var dd=cbDayDate(wk,idx); if(dd.getUTCFullYear()===year) months[dd.getUTCMonth()].teletravail++; }
+      });
+    });
+  });
+  return months;
+}
+function cbRenderEquipe(){
+  if($('cb-eq-year')) $('cb-eq-year').textContent=cbEqYear;
+  var el=$('cb-equipe-content'); if(!el) return;
+  var months=cbComputeTeam(cbEqYear);
+  var row=function(label,key,round){
+    var tot=0, cells=months.map(function(m){ var v=m[key]||0; tot+=v; return '<td>'+(round?Math.round(v):v)+'</td>'; }).join('');
+    return '<tr><td>'+label+'</td>'+cells+'<td style="font-weight:700;color:var(--cb);">'+(round?Math.round(tot):tot)+'</td></tr>';
+  };
+  el.innerHTML=
+    '<div class="cb-card" style="padding:16px 18px;">'+
+      '<div class="cb-eq-sec">Consolidé — tous les employés · '+cbEqYear+'</div>'+
+      '<div style="overflow-x:auto;"><table class="cb-eq-table"><thead><tr><th>Indicateur</th>'+CB_MOIS_ABBR.map(function(m){ return '<th>'+m+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
+        row('🛏 Nuits de découchage','decouchage')+
+        row('🚆✈️ Trajets train + avion','trainavion')+
+        row('🏠 Jours de télétravail','teletravail')+
+        row('🚗 Kilomètres','km',true)+
+      '</tbody></table></div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-top:12px;font-family:DM Mono,monospace;">Agrégé automatiquement depuis les carnets de '+Object.keys(cbAll).length+' employé(s).</div>'+
+    '</div>';
+}
+function cbEqShift(d){ cbEqYear+=d; cbRenderEquipe(); }
+function cbSwitchTab(t){
+  cbTab=t;
+  if($('cb-tab-saisie')) $('cb-tab-saisie').classList.toggle('on',t==='saisie');
+  if($('cb-tab-equipe')) $('cb-tab-equipe').classList.toggle('on',t==='equipe');
+  if($('cb-saisie')) $('cb-saisie').style.display = t==='saisie'?'':'none';
+  if($('cb-equipe')) $('cb-equipe').style.display = t==='equipe'?'':'none';
+  if(t==='equipe') cbRenderEquipe();
+}
+function cbStartAllListener(){
+  if(!window.FS||_cbUnsubAll) return;
+  window.DB_READY.then(function(){
+    _cbUnsubAll=window.FS.collection('carnet').onSnapshot(function(snap){
+      cbAll={}; snap.forEach(function(doc){ cbAll[doc.id]=doc.data(); });
+      if(cbTab==='equipe') cbRenderEquipe();
+    }, function(e){ console.warn('[carnet] équipe', e); });
+  });
+}
+function initCarnet(){
+  cbWeek=cbWeekKey(new Date());
+  cbPopulateEmp();
+  cbStartAllListener();
+}
+function cbEnter(){
+  cbPopulateEmp();
+  if(!cbWeek) cbWeek=cbWeekKey(new Date());
+  var es=getEmployes();
+  if(!cbEmp || es.indexOf(cbEmp)<0){ if(es.length) cbSelectEmp(es[0]); }
+  else cbRenderWeek();
+  if(cbTab==='equipe') cbRenderEquipe();
 }
 
 // ── Version footer ──
