@@ -1535,6 +1535,20 @@
   .cb-eq-table th { color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .cb-eq-table td:first-child, .cb-eq-table th:first-child { text-align:left; color:var(--text); white-space:nowrap; }
   .cb-eq-sec { font:700 11px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--cb); margin:4px 0 10px; }
+  .cb-alert { display:flex; gap:12px; align-items:flex-start; background:rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.40); border-radius:var(--radius-lg); padding:13px 16px; margin-bottom:16px; }
+  .cb-alert .ic { font-size:18px; line-height:1.2; }
+  .cb-alert .t { font-size:14px; font-weight:700; color:#B45309; }
+  .cb-alert .s { font-size:12px; color:var(--text2); margin-top:3px; line-height:1.5; }
+  .cb-alert.ok { background:var(--green-bg); border-color:var(--green-border); }
+  .cb-alert.ok .t { color:var(--green); }
+  .cb-wkchip { display:inline-block; font:600 11px 'DM Mono',monospace; color:#B45309; background:#fff; border:1px solid rgba(245,158,11,.45); border-radius:5px; padding:2px 7px; margin:4px 4px 0 0; cursor:pointer; }
+  .cb-wkchip:hover { background:rgba(245,158,11,.12); }
+  .cb-wkchip.ro { cursor:default; }
+  .cb-in.km.auto { color:var(--cb); font-weight:600; }
+  .cb-eq-miss { width:100%; border-collapse:collapse; font-size:13px; }
+  .cb-eq-miss td { padding:9px 4px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .cb-eq-miss tr:last-child td { border-bottom:none; }
+  .cb-eq-miss td:first-child { font-weight:600; white-space:nowrap; padding-right:14px; width:1%; }
 </style>
 <div class="view" id="view-carnet">
   <main class="cb-main">
@@ -1544,7 +1558,7 @@
     </div>
     <div class="cb-tabs">
       <div class="cb-tab on" id="cb-tab-saisie" onclick="cbSwitchTab('saisie')">Ma saisie</div>
-      <div class="cb-tab" id="cb-tab-equipe" onclick="cbSwitchTab('equipe')">Synthèse équipe</div>
+      <div class="cb-tab" id="cb-tab-equipe" onclick="cbSwitchTab('equipe')">🔒 Synthèse équipe</div>
     </div>
     <div id="cb-saisie">
       <div class="cb-bar">
@@ -1931,6 +1945,10 @@
         <div><div class="frl" style="font-size:12px;">Employés</div><div class="frh">Un nom par ligne — apparaît dans le sélecteur du carnet de bord</div></div>
         <div class="frr"><textarea id="cfg-employes" oninput="saveConfig()" rows="6" style="width:260px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;resize:vertical;outline:none;"></textarea></div>
       </div>
+      <div class="field-row">
+        <div><div class="frl" style="font-size:12px;">Début du suivi</div><div class="frh">Les semaines non remplies sont signalées à partir de cette date</div></div>
+        <div class="frr"><input type="date" class="inline-num" id="cfg-carnet-debut" value="2026-11-02" onchange="saveConfig()" style="width:160px;text-align:left;padding-left:10px;"></div>
+      </div>
     </div>
   </div>
 
@@ -2159,7 +2177,7 @@ function switchPage(page) {
   });
 }
 
-function lockConfig() { configUnlocked=false; maintUnlocked=false; funnelUnlocked=false; leadsUnlocked=false; switchPage('home'); }
+function lockConfig() { cbEqUnlocked=false; configUnlocked=false; maintUnlocked=false; funnelUnlocked=false; leadsUnlocked=false; switchPage('home'); }
 
 let pinBuffer = '';
 let pinTarget = 'config'; // 'config' | 'maint' | 'funnel' | 'leads'
@@ -2203,6 +2221,7 @@ function checkPin() {
     else if (pinTarget === 'maint')  { maintUnlocked  = true; switchPage('maint'); }
     else if (pinTarget === 'funnel') { funnelUnlocked = true; switchPage('funnel'); }
     else if (pinTarget === 'leads')  { leadsUnlocked  = true; switchPage('leads'); }
+    else if (pinTarget === 'carnet-eq') { cbEqUnlocked = true; switchPage('carnet'); cbSwitchTab('equipe'); }
     else if (pinTarget === 'echant') { echantManager = true; updateEchantManagerUI(); switchPage('echantillons'); renderEchant(); }
     pinBuffer=''; updateDots();
   } else {
@@ -2248,6 +2267,7 @@ function loadConfig() {
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-employes')) $('cfg-employes').value = (cfg.employes && cfg.employes.length ? cfg.employes : ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT']).join('\n');
+  if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
   var comms = cfg.commerciaux || {};
   $('cfg-comm-1') && ($('cfg-comm-1').value = comms[1] || '');
   $('cfg-comm-2') && ($('cfg-comm-2').value = comms[2] || '');
@@ -2408,6 +2428,7 @@ function getDefaultConfig() {
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
     employes: ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT'],
+    carnetDebut: '2026-11-02',
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
     tech: {
       cisley: { nom:'Cisley TONI', salaire:50000, leasing:882,  peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
@@ -2438,6 +2459,7 @@ function saveConfig() {
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
     employes: $('cfg-employes') ? ($('cfg-employes').value.split('\n').map(function(s){return s.trim();}).filter(Boolean)) : ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT'],
+    carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
     commerciaux: {
       1: $('cfg-comm-1') ? $('cfg-comm-1').value.trim() : 'Vincent VANDOMME',
       2: $('cfg-comm-2') ? $('cfg-comm-2').value.trim() : 'Jean AVENAS',
@@ -6157,7 +6179,7 @@ var CB_PAYS=['France','Italie','Suisse','Belgique','Autre'];
 var CB_JOURS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
 var CB_MOIS_ABBR=['jan','fév','mar','avr','mai','jun','jui','aoû','sep','oct','nov','déc'];
 var cbEmp=null, cbWeek=null, cbData={weeks:{}}, cbAll={}, cbTab='saisie', cbEqYear=new Date().getFullYear();
-var _cbUnsub=null, _cbUnsubAll=null, _cbSaveT=null, _cbDirtyAt=0;
+var _cbUnsub=null, _cbUnsubAll=null, _cbSaveT=null, _cbDirtyAt=0, cbLoaded=false, cbEqUnlocked=false;
 
 function getEmployes(){ var e=getCfg().employes; return (e&&e.length)?e:['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT']; }
 function cbSlug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
@@ -6217,11 +6239,11 @@ function cbSave(){
 }
 function cbAddDep(){ cbWeekData().deplacements.push({date:cbDefaultDate(),moyen:CB_MOYENS[0],dep:'',arr:'',km:'',client:''}); cbRenderWeek(); cbSave(); }
 function cbDelDep(i){ cbWeekData().deplacements.splice(i,1); cbRenderWeek(); cbSave(); }
-function cbEditDep(i,f,v){ var a=cbWeekData().deplacements; if(a[i]){ a[i][f]=v; cbSave(); cbRenderStats(); } }
+function cbEditDep(i,f,v){ var a=cbWeekData().deplacements; if(a[i]){ a[i][f]=v; if(f==='km'){ a[i].kmAuto=false; var el=document.querySelector('#cb-week [data-km="'+i+'"]'); if(el) el.classList.remove('auto'); } cbSave(); cbRenderStats(); } }
 function cbAddNuit(){ cbWeekData().nuits.push({date:cbDefaultDate(),hotel:'',ville:'',pays:'',nuits:'1'}); cbRenderWeek(); cbSave(); }
 function cbDelNuit(i){ cbWeekData().nuits.splice(i,1); cbRenderWeek(); cbSave(); }
 function cbEditNuit(i,f,v){ var a=cbWeekData().nuits; if(a[i]){ a[i][f]=v; cbSave(); cbRenderStats(); } }
-function cbSetLieu(j,v){ cbWeekData().lieu[j]=v; cbSave(); cbRenderStats(); }
+function cbSetLieu(j,v){ cbWeekData().lieu[j]=v; cbSave(); cbRenderStats(); cbRenderAlert(); }
 
 // ── Employé ──
 function cbPopulateEmp(){
@@ -6232,7 +6254,7 @@ function cbPopulateEmp(){
 }
 function cbOnEmpChange(v){ cbSelectEmp(v); }
 function cbSelectEmp(name){
-  cbEmp=name; _cbDirtyAt=0;
+  cbEmp=name; _cbDirtyAt=0; cbLoaded=!window.FS;
   if($('cb-emp')) $('cb-emp').value=name;
   if(_cbUnsub){ try{_cbUnsub();}catch(e){} _cbUnsub=null; }
   cbData={weeks:{}};
@@ -6245,8 +6267,9 @@ function cbSelectEmp(name){
       if(Date.now()-_cbDirtyAt<2500) return; // modifications locales en cours : on garde le modèle local
       var d=snap.exists?snap.data():null;
       cbData={weeks:(d&&d.weeks)||{}};
+      cbLoaded=true;
       var ae=document.activeElement;
-      if(ae && ae.closest && ae.closest('#cb-week')) cbRenderStats(); else cbRenderWeek();
+      if(ae && ae.closest && ae.closest('#cb-week')){ cbRenderStats(); cbRenderAlert(); } else cbRenderWeek();
     }, function(e){ console.warn('[carnet] écoute', e); });
   });
 }
@@ -6255,10 +6278,10 @@ function cbSelectEmp(name){
 function cbDepRow(d,i){
   return '<tr>'+
     '<td><input type="date" class="cb-in" value="'+cbAttr(d.date)+'" onchange="cbEditDep('+i+',\'date\',this.value)"></td>'+
-    '<td><select class="cb-in" style="min-width:178px;" onchange="cbEditDep('+i+',\'moyen\',this.value)">'+cbOpts(CB_MOYENS,d.moyen||CB_MOYENS[0])+'</select></td>'+
-    '<td><input class="cb-in" value="'+cbAttr(d.dep)+'" oninput="cbEditDep('+i+',\'dep\',this.value)" placeholder="Départ"></td>'+
-    '<td><input class="cb-in" value="'+cbAttr(d.arr)+'" oninput="cbEditDep('+i+',\'arr\',this.value)" placeholder="Arrivée"></td>'+
-    '<td><input class="cb-in km" inputmode="numeric" value="'+cbAttr(d.km)+'" oninput="cbEditDep('+i+',\'km\',this.value)" placeholder="0"></td>'+
+    '<td><select class="cb-in" style="min-width:178px;" onchange="cbEditDep('+i+',\'moyen\',this.value);cbAutoKm('+i+')">'+cbOpts(CB_MOYENS,d.moyen||CB_MOYENS[0])+'</select></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(d.dep)+'" oninput="cbEditDep('+i+',\'dep\',this.value)" onchange="cbAutoKm('+i+')" placeholder="Départ"></td>'+
+    '<td><input class="cb-in" value="'+cbAttr(d.arr)+'" oninput="cbEditDep('+i+',\'arr\',this.value)" onchange="cbAutoKm('+i+')" placeholder="Arrivée"></td>'+
+    '<td><input class="cb-in km'+(d.kmAuto?' auto':'')+'" data-km="'+i+'" inputmode="numeric" value="'+cbAttr(d.km)+'" oninput="cbEditDep('+i+',\'km\',this.value)" placeholder="'+(cbIsVehicule(d.moyen)?'auto':'—')+'" title="'+(d.kmAuto?'Calculé automatiquement — modifiable':'')+'"></td>'+
     '<td><input class="cb-in" value="'+cbAttr(d.client)+'" oninput="cbEditDep('+i+',\'client\',this.value)" placeholder="Client / motif"></td>'+
     '<td><button class="cb-delrow" title="Supprimer" onclick="cbDelDep('+i+')">×</button></td>'+
   '</tr>';
@@ -6307,6 +6330,7 @@ function cbRenderWeek(){
   if(!cbEmp){ el.innerHTML='<div class="cb-empty">Sélectionne un employé.</div>'; return; }
   var w=cbWeekData(), dep=w.deplacements, nuits=w.nuits;
   el.innerHTML=
+    '<div id="cb-alert"></div>'+
     '<div class="cb-card"><div class="cb-card-hd"><h3>Déplacements</h3><button class="cb-addrow" onclick="cbAddDep()">+ Ajouter</button></div>'+
     (dep.length ? '<div style="overflow-x:auto;"><table class="cb-table"><thead><tr><th>Date</th><th>Moyen</th><th>Départ</th><th>Arrivée</th><th>Km</th><th>Client visité</th><th></th></tr></thead><tbody>'+dep.map(cbDepRow).join('')+'</tbody></table></div>'
                 : '<div class="cb-empty">Aucun déplacement cette semaine.</div>')+'</div>'+
@@ -6316,6 +6340,7 @@ function cbRenderWeek(){
     '<div class="cb-card"><div class="cb-card-hd"><h3>Lieu de travail</h3></div>'+cbLieuHtml(w)+'</div>'+
     '<div id="cb-statsbox"></div>';
   cbRenderStats();
+  cbRenderAlert();
 }
 
 // ── Synthèse équipe ──
@@ -6351,7 +6376,7 @@ function cbRenderEquipe(){
     var tot=0, cells=months.map(function(m){ var v=m[key]||0; tot+=v; return '<td>'+(round?Math.round(v):v)+'</td>'; }).join('');
     return '<tr><td>'+label+'</td>'+cells+'<td style="font-weight:700;color:var(--cb);">'+(round?Math.round(tot):tot)+'</td></tr>';
   };
-  el.innerHTML=
+  el.innerHTML= cbEquipeMissingHtml()+
     '<div class="cb-card" style="padding:16px 18px;">'+
       '<div class="cb-eq-sec">Consolidé — tous les employés · '+cbEqYear+'</div>'+
       '<div style="overflow-x:auto;"><table class="cb-eq-table"><thead><tr><th>Indicateur</th>'+CB_MOIS_ABBR.map(function(m){ return '<th>'+m+'</th>'; }).join('')+'<th>Total</th></tr></thead><tbody>'+
@@ -6364,7 +6389,91 @@ function cbRenderEquipe(){
     '</div>';
 }
 function cbEqShift(d){ cbEqYear+=d; cbRenderEquipe(); }
+
+// ── Calcul automatique des km (véhicule de fonction / location) ──
+var _cbGeoCache={};
+function cbIsVehicule(m){ return /^véhicule/.test(m||''); }
+async function cbGeo(q){
+  var k=q.toLowerCase().trim();
+  if(!_cbGeoCache[k]) _cbGeoCache[k]=geocode(q).catch(function(e){ delete _cbGeoCache[k]; throw e; });
+  return _cbGeoCache[k];
+}
+async function cbAutoKm(i){
+  var d=cbWeekData().deplacements[i]; if(!d || !cbIsVehicule(d.moyen)) return;
+  var dep=(d.dep||'').trim(), arr=(d.arr||'').trim(); if(!dep||!arr) return;
+  var wk=cbWeek, emp=cbEmp;
+  var inp=document.querySelector('#cb-week [data-km="'+i+'"]');
+  if(inp){ inp.value='…'; inp.title='Calcul en cours…'; }
+  try{
+    var a=await cbGeo(dep), b=await cbGeo(arr);
+    var km=Math.round(await routeDist(a.lat,a.lon,b.lat,b.lon));
+    if(cbWeek!==wk || cbEmp!==emp) return;
+    var cur=cbWeekData().deplacements[i];
+    if(!cur || (cur.dep||'').trim()!==dep || (cur.arr||'').trim()!==arr) return;
+    cur.km=String(km); cur.kmAuto=true;
+    inp=document.querySelector('#cb-week [data-km="'+i+'"]');
+    if(inp){ inp.value=km; inp.classList.add('auto'); inp.title='Calculé automatiquement ('+dep+' → '+arr+') — modifiable'; }
+    cbSave(); cbRenderStats();
+  }catch(e){
+    inp=document.querySelector('#cb-week [data-km="'+i+'"]');
+    if(inp){ inp.value=d.km||''; inp.title='Distance introuvable — saisir les km à la main'; }
+    echToast('⚠ Distance introuvable pour « '+dep+' → '+arr+' » — saisis les km à la main', 4500);
+  }
+}
+
+// ── Semaines non remplies ──
+function cbStartKey(){
+  var s=getCfg().carnetDebut||'2026-11-02', p=String(s).split('-');
+  return cbWeekKey(new Date(+p[0], (+p[1]||1)-1, +p[2]||1));
+}
+function cbNextKey(k){ var mon=cbMondayOfKey(k); mon.setUTCDate(mon.getUTCDate()+7); return cbWeekKey(new Date(mon.getUTCFullYear(),mon.getUTCMonth(),mon.getUTCDate())); }
+// Semaines passées (avant la semaine en cours) où le lieu de travail n'est pas déclaré pour les 5 jours
+function cbMissingWeeks(weeks){
+  var cur=cbWeekKey(new Date()), out=[], k=cbStartKey(), guard=0;
+  while(k<cur && guard++<160){
+    var l=(weeks && weeks[k] && weeks[k].lieu)||{};
+    var n=CB_JOURS.filter(function(j){ return l[j]; }).length;
+    if(n<5) out.push({key:k, n:n});
+    k=cbNextKey(k);
+  }
+  return out;
+}
+function cbWkShort(k){ var mon=cbMondayOfKey(k); return 'S'+(+k.split('-W')[1])+' ('+mon.getUTCDate()+'/'+(mon.getUTCMonth()+1)+')'; }
+function cbChip(m, clickable){
+  var lbl=cbWkShort(m.key)+(m.n? ' · '+m.n+'/5 j' : ' · vide');
+  return clickable ? '<span class="cb-wkchip" onclick="cbGoWeek(\''+m.key+'\')">'+lbl+'</span>' : '<span class="cb-wkchip ro">'+lbl+'</span>';
+}
+function cbGoWeek(k){ cbWeek=k; cbRenderWeek(); var el=$('cb-week'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+function cbRenderAlert(){
+  var el=$('cb-alert'); if(!el) return;
+  if(!cbEmp || !cbLoaded){ el.innerHTML=''; return; }
+  var miss=cbMissingWeeks(cbData.weeks);
+  if(!miss.length){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="cb-alert"><div class="ic">⚠️</div><div>'+
+    '<div class="t">'+(miss.length===1?'1 semaine à compléter':miss.length+' semaines à compléter')+'</div>'+
+    '<div class="s">Le lieu de travail doit être déclaré pour chaque jour, même sans déplacement ni nuit d\'hôtel. Clique sur une semaine pour la remplir :</div>'+
+    '<div>'+miss.map(function(m){ return cbChip(m,true); }).join('')+'</div>'+
+  '</div></div>';
+}
+function cbEquipeMissingHtml(){
+  var rows=getEmployes().map(function(name){
+    var doc=cbAll[cbSlug(name)];
+    return {name:name, miss:cbMissingWeeks(doc && doc.weeks)};
+  }).filter(function(r){ return r.miss.length; });
+  if(!rows.length) return '<div class="cb-alert ok"><div class="ic">✅</div><div><div class="t">Tous les carnets sont à jour</div><div class="s">Aucune semaine passée sans déclaration du lieu de travail.</div></div></div>';
+  return '<div class="cb-alert"><div class="ic">⚠️</div><div style="flex:1;min-width:0;">'+
+    '<div class="t">'+rows.length+' salarié'+(rows.length>1?'s ont':' a')+' des semaines non remplies</div>'+
+    '<table class="cb-eq-miss" style="margin-top:6px;">'+rows.map(function(r){
+      return '<tr><td>'+cbAttr(r.name)+'</td><td>'+r.miss.map(function(m){ return cbChip(m,false); }).join('')+'</td></tr>';
+    }).join('')+'</table>'+
+  '</div></div>';
+}
 function cbSwitchTab(t){
+  if(t==='equipe' && !cbEqUnlocked){
+    pinTarget='carnet-eq'; pinBuffer=''; updateDots(); if($('pin-error')) $('pin-error').textContent='';
+    $('pin-overlay').classList.remove('hidden');
+    return;
+  }
   cbTab=t;
   if($('cb-tab-saisie')) $('cb-tab-saisie').classList.toggle('on',t==='saisie');
   if($('cb-tab-equipe')) $('cb-tab-equipe').classList.toggle('on',t==='equipe');
