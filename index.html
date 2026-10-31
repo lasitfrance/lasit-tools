@@ -676,8 +676,7 @@
           <div style="width:220px;flex-shrink:0;">
             <div class="select-wrap">
               <select id="proj-technicien" onchange="onProjTechChange()">
-                <option value="cisley">Cisley TONI</option>
-                <option value="avenir" id="proj-tech-avenir-option">À venir</option>
+                <!-- rempli depuis Configuration → Équipe -->
               </select>
             </div>
           </div>
@@ -1604,6 +1603,52 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       BLOC — ÉQUIPE (source unique : commerciaux + techniciens)
+  ══════════════════════════════════════════ -->
+  <style>
+    .team-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); }
+    .team-row:last-child { border-bottom:none; }
+    .team-av { width:30px; height:30px; border-radius:50%; background:rgba(139,92,246,.12); color:#7c3aed; display:flex; align-items:center; justify-content:center; font:700 11px 'DM Mono',monospace; flex-shrink:0; }
+    .team-in { flex:1; min-width:0; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font:13px 'Syne',sans-serif; padding:7px 10px; outline:none; }
+    .team-in:focus { border-color:var(--accent); }
+    .team-in.team-name { font-weight:600; padding:5px 8px; background:var(--bg2); }
+    .team-del { width:28px; height:28px; flex-shrink:0; border:none; background:transparent; color:var(--red); font-size:17px; border-radius:6px; cursor:pointer; }
+    .team-del:hover { background:var(--red-bg); }
+    .team-add { margin-top:12px; background:var(--accent-bg); border:1px solid var(--accent-border); color:var(--accent); font:600 12px 'Syne',sans-serif; border-radius:var(--radius); padding:7px 14px; cursor:pointer; }
+    .team-add:hover { opacity:.85; }
+    .team-empty { font-size:12px; color:var(--text3); padding:8px 0; }
+    .team-note { font-size:11px; color:var(--text3); font-family:'DM Mono',monospace; margin-bottom:10px; line-height:1.5; }
+    @media(max-width:720px){ #team-tech-list.tcc-grid { grid-template-columns:1fr; } }
+  </style>
+  <div class="cfg-block">
+    <div class="cfg-block-header" style="background:rgba(139,92,246,.07);">
+      <div class="cfg-block-icon">👥</div>
+      <div>
+        <div class="cfg-block-title" style="color:#7c3aed;">Équipe</div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">Source unique — Funnel, Leads, Échantillons, Carnet de bord et calculateurs</div>
+      </div>
+    </div>
+    <div class="cfg-block-body">
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">Commerciaux</div>
+        <div class="cfg-sub-body">
+          <div class="team-note">Utilisés par le Funnel, le Lead Analyzer, les Échantillons et le Carnet de bord. Le nom doit être écrit comme dans vos exports Excel (pipeline / leads).</div>
+          <div id="team-comm-list"></div>
+          <button class="team-add" onclick="teamAddComm()">+ Ajouter un commercial</button>
+        </div>
+      </div>
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">Techniciens</div>
+        <div class="cfg-sub-body">
+          <div class="team-note">Utilisés par les calculateurs Maintenance et Prix Machine (base de départ et coûts) et par le Carnet de bord.</div>
+          <div class="tcc-grid" id="team-tech-list"></div>
+          <button class="team-add" onclick="teamAddTech()">+ Ajouter un technicien</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        BLOC 1 — MISE EN SERVICE & MAINTENANCE
   ══════════════════════════════════════════ -->
   <!-- ══════════════════════════════════════════
@@ -1618,42 +1663,6 @@
       </div>
     </div>
     <div class="cfg-block-body">
-
-      <!-- Sous-section : Techniciens (noms + base) -->
-      <div class="cfg-sub">
-        <div class="cfg-sub-title">Techniciens &amp; base de d&eacute;part</div>
-        <div class="cfg-sub-body">
-          <div class="tcc-grid">
-            <div class="tcc-card">
-              <div class="tcc-header">
-                <div class="tcc-av">CT</div>
-                <div><div class="tcc-hname">Cisley TONI</div><div class="tcc-hsub">Technicien 1</div></div>
-              </div>
-              <div class="tcc-body">
-                <div class="tcc-row" style="align-items:flex-start;padding-top:9px;">
-                  <span class="tcc-lbl" style="padding-top:2px;">Base (départ)</span>
-                  <div style="flex:1;margin-left:12px;"><input type="text" class="tcc-num" id="cfg-cisley-base" value="49 chemin vert, Limonest, 69760" style="width:100%;font-size:11px;padding:4px 8px;" oninput="saveConfig()" placeholder="Adresse de départ"></div>
-                </div>
-                <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:8px;">Salaire / leasing / p&eacute;ages / km : voir bloc &laquo; Mise en service &raquo; ci-dessous</div>
-              </div>
-            </div>
-            <div class="tcc-card">
-              <div class="tcc-header">
-                <div class="tcc-av pending">?</div>
-                <div><div class="tcc-hname" id="cfg-avenir-nom-display">À venir</div><div class="tcc-hsub">Technicien 2</div></div>
-                <input type="text" id="cfg-avenir-nom" placeholder="Nom du technicien" value="À venir" style="margin-top:6px;width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;padding:6px 10px;outline:none;" oninput="this.previousElementSibling.querySelector('.tcc-hname').textContent=this.value;saveConfig()">
-              </div>
-              <div class="tcc-body">
-                <div class="tcc-row" style="align-items:flex-start;padding-top:9px;">
-                  <span class="tcc-lbl" style="padding-top:2px;">Base (départ)</span>
-                  <div style="flex:1;margin-left:12px;"><input type="text" class="tcc-num" id="cfg-avenir-base" value="Angers, 49000" style="width:100%;font-size:11px;padding:4px 8px;" oninput="saveConfig()" placeholder="Adresse de départ"></div>
-                </div>
-                <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:8px;">Salaire / leasing / p&eacute;ages / km : voir bloc &laquo; Mise en service &raquo; ci-dessous</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Sous-section : Nuitées & hôtel -->
       <div class="cfg-sub">
@@ -1708,44 +1717,6 @@
       </div>
     </div>
     <div class="cfg-block-body">
-
-      <div class="cfg-sub">
-        <div class="cfg-sub-title">V&eacute;hicules &amp; co&ucirc;t employeur</div>
-        <div class="cfg-sub-body">
-          <div class="tcc-grid">
-            <div class="tcc-card">
-              <div class="tcc-header">
-                <div class="tcc-av">CT</div>
-                <div><div class="tcc-hname">Cisley TONI</div><div class="tcc-hsub">Technicien 1</div></div>
-              </div>
-              <div class="tcc-body">
-                <div class="tcc-row"><span class="tcc-lbl">Salaire brut annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-salaire" value="50000" min="20000" max="200000" step="500" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Leasing mensuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-leasing" value="882" min="200" max="3000" step="10" oninput="saveConfig()"><span class="tcc-unit">€/mois</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">P&eacute;ages annuels</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-peages" value="1800" min="0" max="5000" step="100" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Kilom&eacute;trage annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-cisley-kman" value="60000" min="5000" max="100000" step="1000" oninput="saveConfig()"><span class="tcc-unit">km/an</span></div></div>
-                <div class="tcc-divider"></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t €/km calcul&eacute;</span><span class="tcc-ik" id="cfg-cisley-ik">–</span></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t employeur/jour</span><span class="tcc-ik" id="cfg-cisley-jour">–</span></div>
-              </div>
-            </div>
-            <div class="tcc-card">
-              <div class="tcc-header">
-                <div class="tcc-av pending">?</div>
-                <div><div class="tcc-hname">À venir</div><div class="tcc-hsub">Technicien 2</div></div>
-              </div>
-              <div class="tcc-body">
-                <div class="tcc-row"><span class="tcc-lbl">Salaire brut annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-salaire" value="50000" min="20000" max="200000" step="500" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Leasing mensuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-leasing" value="750" min="200" max="3000" step="10" oninput="saveConfig()"><span class="tcc-unit">€/mois</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">P&eacute;ages annuels</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-peages" value="1800" min="0" max="5000" step="100" oninput="saveConfig()"><span class="tcc-unit">€/an</span></div></div>
-                <div class="tcc-row"><span class="tcc-lbl">Kilom&eacute;trage annuel</span><div class="tcc-right"><input type="number" class="tcc-num" id="cfg-avenir-kman" value="60000" min="5000" max="100000" step="1000" oninput="saveConfig()"><span class="tcc-unit">km/an</span></div></div>
-                <div class="tcc-divider"></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t €/km calcul&eacute;</span><span class="tcc-ik" id="cfg-avenir-ik">–</span></div>
-                <div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Co&ucirc;t employeur/jour</span><span class="tcc-ik" id="cfg-avenir-jour">–</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="cfg-sub">
         <div class="cfg-sub-title">Carburant &amp; marge</div>
@@ -1877,43 +1848,18 @@
        SÉCURITÉ
   ══════════════════════════════════════════ -->
   <!-- ══════════════════════════════════════════
-       BLOC 4 — COMMERCIAUX
+       BLOC 4 — OBJECTIF COMMERCIAL
   ══════════════════════════════════════════ -->
   <div class="cfg-block" style="border-color:var(--border2);">
     <div class="cfg-block-header" style="background:rgba(139,92,246,.07);">
-      <div class="cfg-block-icon">👥</div>
+      <div class="cfg-block-icon">🎯</div>
       <div>
-        <div class="cfg-block-title" style="color:#a78bfa;">Équipe commerciale</div>
+        <div class="cfg-block-title" style="color:#7c3aed;">Objectif commercial</div>
       </div>
     </div>
     <div class="cfg-block-body">
       <div class="cfg-sub">
-        <div class="cfg-sub-title">Commerciaux — Pipeline</div>
         <div class="cfg-sub-body">
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div class="field-row" style="padding-top:0;">
-              <div><div class="frl" style="font-size:12px;">Commercial 1</div></div>
-              <div class="frr"><input type="text" class="inline-num" id="cfg-comm-1" value="Vincent VANDOMME" oninput="saveConfig()" style="width:200px;text-align:left;padding-left:10px;"></div>
-            </div>
-            <div class="field-row">
-              <div><div class="frl" style="font-size:12px;">Commercial 2</div></div>
-              <div class="frr"><input type="text" class="inline-num" id="cfg-comm-2" value="Jean AVENAS" oninput="saveConfig()" style="width:200px;text-align:left;padding-left:10px;"></div>
-            </div>
-            <div class="field-row">
-              <div><div class="frl" style="font-size:12px;">Commercial 3</div></div>
-              <div class="frr"><input type="text" class="inline-num" id="cfg-comm-3" value="Aurélie GUYOT" oninput="saveConfig()" style="width:200px;text-align:left;padding-left:10px;"></div>
-            </div>
-            <div class="field-row">
-              <div><div class="frl" style="font-size:12px;">Commercial 4</div></div>
-              <div class="frr"><input type="text" class="inline-num" id="cfg-comm-4" value="Commercial 4" oninput="saveConfig()" style="width:200px;text-align:left;padding-left:10px;"></div>
-            </div>
-            <div class="field-row">
-              <div><div class="frl" style="font-size:12px;">Commercial 5</div></div>
-              <div class="frr"><input type="text" class="inline-num" id="cfg-comm-5" value="Commercial 5" oninput="saveConfig()" style="width:200px;text-align:left;padding-left:10px;"></div>
-            </div>
-          </div>
-        </div>
-        <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
           <div class="field-row" style="padding-top:0;">
             <div><div class="frl" style="font-size:12px;">Objectif annuel 2026</div><div class="frh">Weighted funnel + PO à atteindre</div></div>
             <div class="frr"><input type="number" class="inline-num" id="cfg-objectif" value="1800000" min="0" step="50000" oninput="saveConfig()"><span class="fru">€</span></div>
@@ -1942,9 +1888,8 @@
   <div class="section">
     <div class="section-label">📓 Carnet de bord</div>
     <div class="card">
-      <div class="field-row" style="padding-top:0;align-items:flex-start;">
-        <div><div class="frl" style="font-size:12px;">Employés</div><div class="frh">Un nom par ligne — apparaît dans le sélecteur du carnet de bord</div></div>
-        <div class="frr"><textarea id="cfg-employes" oninput="saveConfig()" rows="6" style="width:260px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;resize:vertical;outline:none;"></textarea></div>
+      <div class="field-row" style="padding-top:0;">
+        <div><div class="frl" style="font-size:12px;">Employés</div><div class="frh">Automatique : tous les commerciaux et techniciens du bloc « Équipe » ci-dessus</div></div>
       </div>
       <div class="field-row">
         <div><div class="frl" style="font-size:12px;">Début du suivi</div><div class="frh">Les semaines non remplies sont signalées à partir de cette date</div></div>
@@ -2056,14 +2001,14 @@ function buildSimulatorHTML(ns) {
   h +=   "<div class=\"card\">";
   h +=     "<div class=\"select-wrap\" style=\"margin-bottom:10px;\">";
   h +=       "<select id=\"" + n + "-technicien\" onchange=\"onTechChange(&apos;" + n + "&apos;)\">";
-  h +=         "<option value=\"cisley\">Technicien 1 &mdash; Cisley TONI</option>";
-  var avenirMeta = getTechMeta().avenir;
-  h +=         "<option value=\"avenir\">Technicien 2 &mdash; " + avenirMeta.nom + "</option>";
+  var _tids = getTechIds(), _tmeta = getTechMeta();
+  _tids.forEach(function(id, i){ h += "<option value=\"" + id + "\">Technicien " + (i+1) + " &mdash; " + cbAttr(_tmeta[id].nom) + "</option>"; });
+  var _t0 = _tmeta[_tids[0]];
   h +=       "</select></div>";
   h +=     "<div class=\"tech-card\">";
-  h +=       "<div class=\"tech-avatar\" id=\"" + n + "-tech-avatar\">CT</div>";
-  h +=       "<div><div class=\"tech-name\" id=\"" + n + "-tech-name\">Cisley TONI</div>";
-  h +=       "<div class=\"tech-role\" id=\"" + n + "-tech-role\">Technicien installation</div></div>";
+  h +=       "<div class=\"tech-avatar" + (_t0.pending?" pending":"") + "\" id=\"" + n + "-tech-avatar\">" + _t0.initiales + "</div>";
+  h +=       "<div><div class=\"tech-name\" id=\"" + n + "-tech-name\">" + cbAttr(_t0.nom) + "</div>";
+  h +=       "<div class=\"tech-role\" id=\"" + n + "-tech-role\">" + cbAttr(_t0.role) + "</div></div>";
   h +=     "</div></div></div>";
 
   h += "<div class=\"section\">";
@@ -2267,14 +2212,7 @@ function loadConfig() {
   set('cfg-remise-hq',         cfg.remiseHQ);
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
-  if($('cfg-employes')) $('cfg-employes').value = (cfg.employes && cfg.employes.length ? cfg.employes : ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT']).join('\n');
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
-  var comms = cfg.commerciaux || {};
-  $('cfg-comm-1') && ($('cfg-comm-1').value = comms[1] || '');
-  $('cfg-comm-2') && ($('cfg-comm-2').value = comms[2] || '');
-  $('cfg-comm-3') && ($('cfg-comm-3').value = comms[3] || '');
-  $('cfg-comm-4') && ($('cfg-comm-4').value = comms[4] || '');
-  $('cfg-comm-5') && ($('cfg-comm-5').value = comms[5] || '');
   set('cfg-pdj',   cfg.pdj);
   set('cfg-dej',   cfg.dej);
   set('cfg-diner', cfg.diner);
@@ -2285,21 +2223,8 @@ function loadConfig() {
   set('cfg-ship-compactmark',  ship.compactmark);
   set('cfg-ship-powermark',    ship.powermark);
   set('cfg-ship-custom',       ship.custom);
-  const t=cfg.tech||{}, c=t.cisley||{}, a=t.avenir||{};
-  set('cfg-cisley-salaire', c.salaire);
-  set('cfg-cisley-leasing', c.leasing);
-  set('cfg-cisley-peages',  c.peages);
-  set('cfg-cisley-kman',    c.kman);
-  set('cfg-cisley-base',    c.base);
-  set('cfg-avenir-salaire', a.salaire);
-  set('cfg-avenir-leasing', a.leasing);
-  set('cfg-avenir-peages',  a.peages);
-  set('cfg-avenir-kman',    a.kman);
-  set('cfg-avenir-base',    a.base);
-  set('cfg-avenir-nom',     a.nom || 'À venir');
-  if ($('cfg-avenir-nom-display')) $('cfg-avenir-nom-display').textContent = a.nom || 'À venir';
-  var avenirLabel = a.nom || 'À venir';
-  if ($('proj-tech-avenir-option')) $('proj-tech-avenir-option').textContent = avenirLabel;
+  teamLoad();            // Équipe : commerciaux + techniciens (source unique)
+  populateTechSelects(); // listes de techniciens des calculateurs
   refreshCfgIK();
 }
 
@@ -2428,14 +2353,14 @@ function getDefaultConfig() {
     diner: 30,
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
-    employes: ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT'],
     carnetDebut: '2026-11-02',
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
     tech: {
-      cisley: { nom:'Cisley TONI', salaire:50000, leasing:882,  peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
-      avenir: { nom:'À venir',     salaire:50000, leasing:750,  peages:1800, kman:60000, base:'Angers, 49000' }
+      cisley: { nom:'Cisley TONI',      role:'Technicien installation', salaire:50000, leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
+      avenir: { nom:'Jeremy DEROUAULT', role:'Technicien',              salaire:50000, leasing:750, peages:1800, kman:60000, base:'Angers, 49000' }
     },
-    commerciaux: { 1:'Vincent VANDOMME', 2:'Jean AVENAS', 3:'Aurélie GUYOT', 4:'Commercial 4', 5:'Commercial 5' }
+    techOrder: ['cisley','avenir'],
+    commerciaux: ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT']
   };
 }
 
@@ -2459,15 +2384,8 @@ function saveConfig() {
     remiseHQ:         vn('cfg-remise-hq'),
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
-    employes: $('cfg-employes') ? ($('cfg-employes').value.split('\n').map(function(s){return s.trim();}).filter(Boolean)) : ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT'],
     carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
-    commerciaux: {
-      1: $('cfg-comm-1') ? $('cfg-comm-1').value.trim() : 'Vincent VANDOMME',
-      2: $('cfg-comm-2') ? $('cfg-comm-2').value.trim() : 'Jean AVENAS',
-      3: $('cfg-comm-3') ? $('cfg-comm-3').value.trim() : 'Aurélie GUYOT',
-      4: $('cfg-comm-4') ? $('cfg-comm-4').value.trim() : 'Commercial 4',
-      5: $('cfg-comm-5') ? $('cfg-comm-5').value.trim() : 'Commercial 5',
-    },
+    commerciaux: teamGetCommerciaux(),
     pdj:   vn('cfg-pdj'), dej: vn('cfg-dej'), diner: vn('cfg-diner'),
     ship: {
       micromark:      vn('cfg-ship-micromark'),
@@ -2477,13 +2395,14 @@ function saveConfig() {
       powermark:      vn('cfg-ship-powermark'),
       custom:         vn('cfg-ship-custom'),
     },
-    tech: {
-      cisley: { salaire:vn('cfg-cisley-salaire'), leasing:vn('cfg-cisley-leasing'), peages:vn('cfg-cisley-peages'), kman:vn('cfg-cisley-kman'), base:$('cfg-cisley-base') ? $('cfg-cisley-base').value.trim() : '49 chemin vert, Limonest, 69760' },
-      avenir: { nom: $('cfg-avenir-nom') ? $('cfg-avenir-nom').value.trim() : 'À venir', salaire:vn('cfg-avenir-salaire'), leasing:vn('cfg-avenir-leasing'), peages:vn('cfg-avenir-peages'), kman:vn('cfg-avenir-kman'), base:$('cfg-avenir-base') ? $('cfg-avenir-base').value.trim() : 'Angers, 49000' }
-    }
+    tech: teamGetTech(),
+    techOrder: teamGetTechOrder()
   };
   window.APP_CFG = cfg;
   refreshCfgIK();
+  populateTechSelects();
+  if (typeof populateEchantCommerciaux==='function') populateEchantCommerciaux();
+  if (typeof cbPopulateEmp==='function') cbPopulateEmp();
   calcPage('maint');
   calcShip();
 }
@@ -3009,40 +2928,171 @@ function savePin() {
 }
 
 function refreshCfgIK() {
-  ['cisley','avenir'].forEach(key => {
-    const td = getTechData(key);
-    const pc = vn('cfg-prix-carb') || 1.68;
-    const ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages) / td.kman;
-    const cj = td.salaire * (1+CHARGES) / JOURSOUV;
-    if ($(`cfg-${key}-ik`))   $(`cfg-${key}-ik`).textContent   = ik.toFixed(2) + ' €/km';
-    if ($(`cfg-${key}-jour`)) $(`cfg-${key}-jour`).textContent = fmtE(cj);
+  getTechIds().forEach(function(key){
+    var td = getTechData(key);
+    var pc = vn('cfg-prix-carb') || 1.68;
+    var ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages) / td.kman;
+    var cj = td.salaire * (1+CHARGES) / JOURSOUV;
+    if ($('team-ik-'+key))   $('team-ik-'+key).textContent   = isFinite(ik) ? ik.toFixed(2) + ' €/km' : '–';
+    if ($('team-jour-'+key)) $('team-jour-'+key).textContent = isFinite(cj) ? fmtE(cj) : '–';
   });
 }
 
 // ══════════════════════════════════════════════
 //  DONNÉES TECHNICIEN
 // ══════════════════════════════════════════════
-function getTechMeta() {
-  var cfg = getCfg();
-  var avenirNom = (cfg.tech && cfg.tech.avenir && cfg.tech.avenir.nom) ? cfg.tech.avenir.nom : 'À venir';
-  var initiales = avenirNom !== 'À venir' ? avenirNom.split(' ').map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase() : '?';
-  return {
-    cisley: { nom:'Cisley TONI', initiales:'CT', role:'Technicien installation', pending:false },
-    avenir: { nom:avenirNom, initiales:initiales, role:'Technicien', pending:avenirNom==='À venir' }
-  };
+// ══ ÉQUIPE — source unique : commerciaux + techniciens ══
+var COMM_DEFAULT = ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT'];
+var TECH_DEFAULTS = {
+  cisley: { nom:'Cisley TONI',      role:'Technicien installation', salaire:50000, leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
+  avenir: { nom:'Jeremy DEROUAULT', role:'Technicien',              salaire:50000, leasing:750, peages:1800, kman:60000, base:'Angers, 49000' }
+};
+var TECH_GENERIC = { nom:'', role:'Technicien', salaire:50000, leasing:800, peages:1800, kman:60000, base:'Limonest, 69760' };
+// Accepte l'ancien format {1:..,5:..} (avec « Commercial N ») et le nouveau format tableau
+function normalizeCommerciaux(c){
+  if (Array.isArray(c)) return c.map(function(x){ return String(x||'').trim(); }).filter(Boolean);
+  if (c && typeof c==='object') return Object.keys(c).sort(function(a,b){ return a-b; })
+    .map(function(k){ return String(c[k]||'').trim(); })
+    .filter(function(n){ return n && !/^Commercial \d+$/.test(n); });
+  return null;
+}
+function getCommerciaux(){ var n=normalizeCommerciaux(getCfg().commerciaux); return (n && n.length) ? n : COMM_DEFAULT.slice(); }
+function getTechIds(){
+  var cfg=getCfg(), t=cfg.tech||{};
+  var ids = (Array.isArray(cfg.techOrder) && cfg.techOrder.length) ? cfg.techOrder.slice() : Object.keys(t);
+  ids = ids.filter(function(id){ return id && (t[id] || TECH_DEFAULTS[id]); });
+  return ids.length ? ids : ['cisley','avenir'];
+}
+function techInitiales(nom){
+  return String(nom||'').trim().split(/\s+/).filter(Boolean).map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+}
+function getTechMeta(){
+  var m={};
+  getTechIds().forEach(function(id){
+    var d=getTechData(id), nom=String(d.nom||'').trim(), pend=(!nom || nom==='À venir');
+    m[id]={ nom: nom||'À venir', initiales: pend ? '?' : techInitiales(nom), role: d.role||'Technicien', pending: pend };
+  });
+  return m;
 }
 const TECH_META = {
   cisley: { nom:'Cisley TONI',  initiales:'CT', role:'Technicien installation', pending:false },
   avenir: { nom:'À venir',      initiales:'?',  role:'Poste à pourvoir',        pending:true  }
 };
 function getTechData(key) {
-  const t = (getCfg().tech || {})[key] || {};
-  const def = {
-    cisley: { salaire:50000, leasing:882,  peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
-    avenir: { salaire:50000, leasing:750,  peages:1800, kman:60000, base:'Angers, 49000' }
-  };
-  return { ...def[key], ...t };
+  var t = (getCfg().tech || {})[key] || {};
+  return Object.assign({}, TECH_DEFAULTS[key] || TECH_GENERIC, t);
 }
+// Remplit les listes de techniciens des calculateurs (Prix Machine + Maintenance)
+function populateTechSelects(){
+  var ids=getTechIds(), meta=getTechMeta();
+  var ps=$('proj-technicien');
+  if (ps) {
+    var cur=ps.value;
+    ps.innerHTML = ids.map(function(id){ return '<option value="'+id+'">'+cbAttr(meta[id].nom)+'</option>'; }).join('');
+    if (ids.indexOf(cur)>=0) ps.value=cur;
+    else { ps.value=ids[0]; if (cur && typeof onProjTechChange==='function') onProjTechChange(); }
+  }
+  var ms=$('maint-technicien');
+  if (ms) {
+    var c2=ms.value;
+    ms.innerHTML = ids.map(function(id,i){ return '<option value="'+id+'">Technicien '+(i+1)+' — '+cbAttr(meta[id].nom)+'</option>'; }).join('');
+    if (ids.indexOf(c2)>=0) ms.value=c2;
+    else { ms.value=ids[0]; if (c2) onTechChange('maint'); }
+    var mm=meta[ms.value];
+    if (mm && $('maint-tech-name')) {
+      $('maint-tech-name').textContent=mm.nom;
+      if ($('maint-tech-role')) $('maint-tech-role').textContent=mm.role;
+      var av=$('maint-tech-avatar'); if (av){ av.textContent=mm.initiales; av.className=mm.pending?'tech-avatar pending':'tech-avatar'; }
+    }
+  }
+}
+// ── Éditeur Équipe (Configuration) ──
+var TEAM = null;
+function teamNum(v, def){ var n=parseFloat(String(v).replace(',','.')); return isFinite(n) && n>0 ? n : def; }
+function teamLoad(){
+  TEAM = { commerciaux:getCommerciaux(), techOrder:getTechIds(), tech:{} };
+  TEAM.techOrder.forEach(function(id){ TEAM.tech[id]=getTechData(id); });
+  teamRender();
+}
+function teamGetCommerciaux(){ return TEAM ? TEAM.commerciaux.map(function(x){ return String(x||'').trim(); }).filter(Boolean) : getCommerciaux(); }
+function teamGetTechOrder(){ return TEAM ? TEAM.techOrder.slice() : getTechIds(); }
+function teamGetTech(){
+  var out={};
+  teamGetTechOrder().forEach(function(id){
+    var t = TEAM ? TEAM.tech[id] : getTechData(id), d = TECH_DEFAULTS[id]||TECH_GENERIC;
+    out[id] = { nom:String(t.nom||'').trim(), role:t.role||d.role||'Technicien',
+      salaire:teamNum(t.salaire,d.salaire), leasing:teamNum(t.leasing,d.leasing),
+      peages:(isFinite(parseFloat(t.peages)) ? parseFloat(t.peages) : d.peages), kman:teamNum(t.kman,d.kman),
+      base:String(t.base||'').trim() || d.base };
+  });
+  return out;
+}
+function teamRender(){
+  if (!TEAM) return;
+  var cl=$('team-comm-list');
+  if (cl) cl.innerHTML = TEAM.commerciaux.length ? TEAM.commerciaux.map(function(n,i){
+    return '<div class="team-row"><span class="team-av" id="team-cav-'+i+'">'+(cbAttr(techInitiales(n))||'?')+'</span>'+
+      '<input class="team-in" value="'+cbAttr(n)+'" placeholder="Prénom NOM" oninput="teamSetComm('+i+',this.value)">'+
+      '<button class="team-del" title="Retirer ce commercial" onclick="teamDelComm('+i+')">×</button></div>';
+  }).join('') : '<div class="team-empty">Aucun commercial — ajoutes-en un.</div>';
+  var tl=$('team-tech-list');
+  if (tl) tl.innerHTML = TEAM.techOrder.map(function(id,i){
+    var t=TEAM.tech[id], nom=String(t.nom||'').trim(), pend=(!nom||nom==='À venir');
+    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f])+'" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
+    return '<div class="tcc-card">'+
+      '<div class="tcc-header">'+
+        '<div class="tcc-av'+(pend?' pending':'')+'" id="team-tav-'+id+'">'+(pend?'?':cbAttr(techInitiales(nom)))+'</div>'+
+        '<div style="flex:1;min-width:0;"><input class="team-in team-name" value="'+cbAttr(nom)+'" placeholder="Prénom NOM" oninput="teamSetTech(\''+id+'\',\'nom\',this.value)">'+
+        '<div class="tcc-hsub">Technicien '+(i+1)+'</div></div>'+
+        '<button class="team-del" title="Retirer ce technicien" onclick="teamDelTech(\''+id+'\')">×</button>'+
+      '</div>'+
+      '<div class="tcc-body">'+
+        '<div class="tcc-row" style="align-items:flex-start;"><span class="tcc-lbl" style="padding-top:4px;">Base (départ)</span>'+
+          '<input type="text" class="tcc-num" value="'+cbAttr(t.base)+'" placeholder="Adresse de départ" style="flex:1;margin-left:12px;text-align:left;font-size:11px;padding:4px 8px;" oninput="teamSetTech(\''+id+'\',\'base\',this.value)"></div>'+
+        num('salaire','Salaire brut annuel','€/an',500)+
+        num('leasing','Leasing mensuel','€/mois',10)+
+        num('peages','Péages annuels','€/an',100)+
+        num('kman','Kilométrage annuel','km/an',1000)+
+        '<div class="tcc-divider"></div>'+
+        '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût €/km calculé</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
+        '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût employeur/jour</span><span class="tcc-ik" id="team-jour-'+id+'">–</span></div>'+
+      '</div></div>';
+  }).join('');
+  refreshCfgIK();
+}
+function teamSetComm(i,v){
+  TEAM.commerciaux[i]=v;
+  var av=$('team-cav-'+i); if (av) av.textContent=techInitiales(v)||'?';
+  saveConfig();
+}
+function teamAddComm(){
+  TEAM.commerciaux.push(''); teamRender();
+  var ins=document.querySelectorAll('#team-comm-list .team-in'); if (ins.length) ins[ins.length-1].focus();
+}
+function teamDelComm(i){
+  var n=TEAM.commerciaux[i]||'ce commercial';
+  if (TEAM.commerciaux[i] && !confirm('Retirer '+n+' de l\'équipe commerciale ?\n\nSes données (pipeline, carnet de bord) ne sont pas supprimées.')) return;
+  TEAM.commerciaux.splice(i,1); teamRender(); saveConfig();
+}
+function teamSetTech(id,f,v){
+  TEAM.tech[id][f]=v;
+  if (f==='nom'){ var av=$('team-tav-'+id), nom=String(v||'').trim(), pend=(!nom||nom==='À venir'); if (av){ av.textContent=pend?'?':techInitiales(nom); av.className='tcc-av'+(pend?' pending':''); } }
+  saveConfig();
+}
+function teamAddTech(){
+  var id='t'+Date.now().toString(36);
+  TEAM.tech[id]=Object.assign({}, TECH_GENERIC); TEAM.techOrder.push(id);
+  teamRender(); saveConfig();
+  var ins=document.querySelectorAll('#team-tech-list .team-name'); if (ins.length) ins[ins.length-1].focus();
+}
+function teamDelTech(id){
+  if (TEAM.techOrder.length<=1){ echToast('⚠ Il faut au moins un technicien'); return; }
+  var n=String(TEAM.tech[id].nom||'').trim()||'ce technicien';
+  if (!confirm('Retirer '+n+' des techniciens ?\n\nIl ne sera plus proposé dans les calculateurs.')) return;
+  TEAM.techOrder=TEAM.techOrder.filter(function(x){ return x!==id; }); delete TEAM.tech[id];
+  teamRender(); saveConfig();
+}
+
 function getTechBase(key) { return getTechData(key).base || 'Limonest, 69760'; }
 function getIK(key) {
   const t = getTechData(key);
@@ -3084,7 +3134,7 @@ function validateMaint(ns) {
 function onTechChange(ns) {
   if (!$(`${ns}-technicien`)) return;
   const key  = $(`${ns}-technicien`).value;
-  const meta = getTechMeta()[key] || TECH_META[key];
+  const meta = getTechMeta()[key] || TECH_META[key] || { nom:'?', initiales:'?', role:'Technicien', pending:true };
   $(`${ns}-tech-name`).textContent  = meta.nom;
   $(`${ns}-tech-role`).textContent  = meta.role;
   const av = $(`${ns}-tech-avatar`);
@@ -3482,7 +3532,7 @@ loadConfigFromJson().then(function(){
   if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
   $('main-maint').innerHTML = buildSimulatorHTML('maint');
   loadConfig();
-  if ($('maint-origin-input')) $('maint-origin-input').value = getTechBase('cisley');
+  if ($('maint-origin-input')) $('maint-origin-input').value = getTechBase(getTechIds()[0]);
   validateMaint('maint');
   initAppLock();
   if ($('proj-machine')) $('proj-machine').value = '';
@@ -3498,7 +3548,7 @@ loadConfigFromJson().then(function(){
   if (!window.APP_CFG) window.APP_CFG = getDefaultConfig();
   $('main-maint').innerHTML = buildSimulatorHTML('maint');
   loadConfig();
-  if ($('maint-origin-input')) $('maint-origin-input').value = getTechBase('cisley');
+  if ($('maint-origin-input')) $('maint-origin-input').value = getTechBase(getTechIds()[0]);
   validateMaint('maint');
   initAppLock();
   if ($('proj-machine')) $('proj-machine').value = '';
@@ -3538,17 +3588,7 @@ function fmtK(n) {
 function fmtPct(n) { return n===null||n===undefined ? '–' : n.toFixed(1)+'%'; }
 function fmtN2(n)  { return n===null||n===undefined ? '–' : n.toFixed(1); }
 
-function getCommerciauxList() {
-  var cfg = getCfg(); var c = cfg.commerciaux || {};
-  var list = [];
-  for (var i=1;i<=5;i++) {
-    var name = c[i] || ('Commercial '+i);
-    if (name && name !== 'Commercial 4' && name !== 'Commercial 5' || i<=3) list.push(name);
-    else if (c[i] && c[i].trim()) list.push(c[i].trim());
-  }
-  // Only include names that actually appear in data
-  return list.filter(function(n){ return n && n.trim(); });
-}
+function getCommerciauxList() { return getCommerciaux(); }
 
 function sortedMonths() {
   if (!funnelHistory || typeof funnelHistory !== 'object') return [];
@@ -5306,14 +5346,7 @@ function getUniqueOwners(opps) {
 }
 
 function getConfiguredOwners() {
-  var cfg = getCfg();
-  var comms = cfg.commerciaux || {};
-  var list = [];
-  [1,2,3,4,5].forEach(function(i){
-    var name = comms[i] || ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Commercial 4','Commercial 5'][i-1];
-    if (name && name.trim() && !name.startsWith('Commercial ')) list.push(name.trim());
-  });
-  return list;
+  return getCommerciaux();
 }
 
 function filterLeadsByOwner(leads) {
@@ -5949,9 +5982,8 @@ function echTick(){
 function populateEchantCommerciaux(){
   var sel=$('ech-com'); if(!sel) return;
   var cur=sel.value;
-  var c=(getCfg().commerciaux)||{};
   var opts='<option value="">— Choisir —</option>';
-  for(var i=1;i<=5;i++){ var n=c[i]&&c[i].trim(); if(n && !/^Commercial \d$/.test(n)) opts+='<option>'+echEsc(n)+'</option>'; }
+  getCommerciaux().forEach(function(n){ opts+='<option>'+echEsc(n)+'</option>'; });
   sel.innerHTML=opts; if(cur) sel.value=cur;
 }
 
@@ -6182,7 +6214,13 @@ var CB_MOIS_ABBR=['jan','fév','mar','avr','mai','jun','jui','aoû','sep','oct',
 var cbEmp=null, cbWeek=null, cbData={weeks:{}}, cbAll={}, cbTab='saisie', cbEqYear=new Date().getFullYear();
 var _cbUnsub=null, _cbUnsubAll=null, _cbSaveT=null, _cbDirtyAt=0, cbLoaded=false, cbEqUnlocked=false;
 
-function getEmployes(){ var e=getCfg().employes; return (e&&e.length)?e:['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT','Cisley TONI','Jeremy DEROUAULT']; }
+// Carnet de bord : tous les commerciaux + tous les techniciens (Configuration → Équipe)
+function getEmployes(){
+  var out=[], seen={};
+  getCommerciaux().concat(getTechIds().map(function(id){ return String(getTechData(id).nom||'').trim(); }))
+    .forEach(function(n){ var k=n.toLowerCase(); if(n && n!=='À venir' && !seen[k]){ seen[k]=1; out.push(n); } });
+  return out;
+}
 function cbSlug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function cbAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function cbOpts(arr,sel){ return arr.map(function(o){ return '<option'+(o===sel?' selected':'')+'>'+cbAttr(o)+'</option>'; }).join(''); }
