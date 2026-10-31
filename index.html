@@ -1502,6 +1502,7 @@
   .cb-weeknav { display:flex; align-items:center; gap:8px; margin-left:auto; }
   .cb-navbtn { width:32px; height:32px; border-radius:var(--radius); border:1px solid var(--border2); background:var(--bg2); cursor:pointer; color:var(--text); font-size:16px; line-height:1; }
   .cb-navbtn:hover { background:var(--bg3); }
+  .cb-navbtn:disabled { opacity:.35; cursor:not-allowed; background:var(--bg2); }
   .cb-wklabel { font:600 13px 'DM Mono',monospace; color:var(--text); min-width:210px; text-align:center; }
   .cb-today { font:600 11px 'DM Mono',monospace; color:var(--cb); background:var(--cb-bg); border:1px solid var(--cb-br); border-radius:var(--radius); padding:7px 12px; cursor:pointer; }
   .cb-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:16px; }
@@ -1566,7 +1567,7 @@
         <div class="cb-weeknav">
           <button class="cb-navbtn" onclick="cbPrevWeek()" title="Semaine précédente">‹</button>
           <div class="cb-wklabel" id="cb-wklabel">—</div>
-          <button class="cb-navbtn" onclick="cbNextWeek()" title="Semaine suivante">›</button>
+          <button class="cb-navbtn" id="cb-next" onclick="cbNextWeek()" title="Semaine suivante">›</button>
           <button class="cb-today" onclick="cbToday()">Cette semaine</button>
         </div>
       </div>
@@ -6209,7 +6210,9 @@ function cbWeekLabel(key){
 }
 function cbShiftWeek(delta){
   var mon=cbMondayOfKey(cbWeek); mon.setUTCDate(mon.getUTCDate()+delta*7);
-  cbWeek=cbWeekKey(new Date(mon.getUTCFullYear(),mon.getUTCMonth(),mon.getUTCDate()));
+  var k=cbWeekKey(new Date(mon.getUTCFullYear(),mon.getUTCMonth(),mon.getUTCDate()));
+  var cur=cbWeekKey(new Date());
+  cbWeek = k>cur ? cur : k; // semaines futures interdites
   cbRenderWeek();
 }
 function cbPrevWeek(){ cbShiftWeek(-1); }
@@ -6324,8 +6327,10 @@ function cbRenderStats(){
   '</div>';
 }
 function cbRenderWeek(){
-  if(!cbWeek) cbWeek=cbWeekKey(new Date());
-  if($('cb-wklabel')) $('cb-wklabel').textContent=cbWeekLabel(cbWeek);
+  var curWk=cbWeekKey(new Date());
+  if(!cbWeek || cbWeek>curWk) cbWeek=curWk;
+  if($('cb-wklabel')) $('cb-wklabel').textContent=cbWeekLabel(cbWeek)+(cbWeek===curWk?' · en cours':'');
+  if($('cb-next')){ var last=cbWeek>=curWk; $('cb-next').disabled=last; $('cb-next').title=last?'Les semaines futures ne sont pas accessibles':'Semaine suivante'; }
   var el=$('cb-week'); if(!el) return;
   if(!cbEmp){ el.innerHTML='<div class="cb-empty">Sélectionne un employé.</div>'; return; }
   var w=cbWeekData(), dep=w.deplacements, nuits=w.nuits;
@@ -6456,6 +6461,15 @@ function cbRenderAlert(){
   '</div></div>';
 }
 function cbEquipeMissingHtml(){
+  var startK=cbStartKey(), curK=cbWeekKey(new Date());
+  if(startK>=curK){
+    var mon=cbMondayOfKey(startK), nxt=cbMondayOfKey(cbNextKey(startK));
+    var f=function(d){ return d.getUTCDate()+'/'+String(d.getUTCMonth()+1).padStart(2,'0'); };
+    return '<div class="cb-alert" style="background:var(--cb-bg);border-color:var(--cb-br);"><div class="ic">🗓️</div><div>'+
+      '<div class="t" style="color:var(--cb);">Suivi pas encore démarré</div>'+
+      '<div class="s">Le suivi commence le lundi '+f(mon)+' (date réglable dans Configuration → Carnet de bord). Aucune semaine n\'est encore à contrôler : les carnets non remplis apparaîtront ici à partir du lundi '+f(nxt)+'.</div>'+
+    '</div></div>';
+  }
   var rows=getEmployes().map(function(name){
     var doc=cbAll[cbSlug(name)];
     return {name:name, miss:cbMissingWeeks(doc && doc.weeks)};
