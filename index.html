@@ -1545,6 +1545,10 @@
   .cb-wkchip:hover { background:rgba(245,158,11,.12); }
   .cb-wkchip.ro { cursor:default; }
   .cb-in.km.auto { color:var(--cb); font-weight:600; }
+  .cb-ar { display:inline-flex; align-items:center; gap:5px; font:600 11px 'DM Mono',monospace; color:var(--text2); cursor:pointer; white-space:nowrap; padding:4px 6px; border-radius:5px; }
+  .cb-ar:hover { background:var(--bg3); }
+  .cb-ar input { width:15px; height:15px; accent-color:var(--cb); cursor:pointer; }
+  .cb-tot { font:600 13px 'DM Mono',monospace; color:var(--text); text-align:right; white-space:nowrap; padding-right:10px !important; }
   .cb-eq-miss { width:100%; border-collapse:collapse; font-size:13px; }
   .cb-eq-miss td { padding:9px 4px; border-bottom:1px solid var(--border); vertical-align:top; }
   .cb-eq-miss tr:last-child td { border-bottom:none; }
@@ -6278,9 +6282,14 @@ function cbSave(){
     });
   }, 700);
 }
-function cbAddDep(){ cbWeekData().deplacements.push({date:cbDefaultDate(),moyen:CB_MOYENS[0],dep:'',arr:'',km:'',client:''}); cbRenderWeek(); cbSave(); }
+function cbAddDep(){ cbWeekData().deplacements.push({date:cbDefaultDate(),moyen:CB_MOYENS[0],dep:'',arr:'',km:'',ar:false,client:''}); cbRenderWeek(); cbSave(); }
 function cbDelDep(i){ cbWeekData().deplacements.splice(i,1); cbRenderWeek(); cbSave(); }
-function cbEditDep(i,f,v){ var a=cbWeekData().deplacements; if(a[i]){ a[i][f]=v; if(f==='km'){ a[i].kmAuto=false; var el=document.querySelector('#cb-week [data-km="'+i+'"]'); if(el) el.classList.remove('auto'); } cbSave(); cbRenderStats(); } }
+function cbEditDep(i,f,v){ var a=cbWeekData().deplacements; if(a[i]){ a[i][f]=v; if(f==='km'){ a[i].kmAuto=false; var el=document.querySelector('#cb-week [data-km="'+i+'"]'); if(el) el.classList.remove('auto'); } cbRefreshTot(i); cbSave(); cbRenderStats(); } }
+// Aller-retour : km totaux = km aller × 2 ; trajets comptés ×2
+function cbDepKm(d){ var k=parseFloat(String(d.km==null?'':d.km).replace(',','.'))||0; return d.ar ? k*2 : k; }
+function cbDepTrips(d){ return d.ar ? 2 : 1; }
+function cbTotLabel(d){ var t=cbDepKm(d); return t ? Math.round(t)+' km' : '—'; }
+function cbRefreshTot(i){ var d=cbWeekData().deplacements[i], el=document.querySelector('#cb-week [data-tot="'+i+'"]'); if(d && el) el.textContent=cbTotLabel(d); }
 function cbAddNuit(){ cbWeekData().nuits.push({date:cbDefaultDate(),hotel:'',ville:'',pays:'',nuits:'1'}); cbRenderWeek(); cbSave(); }
 function cbDelNuit(i){ cbWeekData().nuits.splice(i,1); cbRenderWeek(); cbSave(); }
 function cbEditNuit(i,f,v){ var a=cbWeekData().nuits; if(a[i]){ a[i][f]=v; cbSave(); cbRenderStats(); } }
@@ -6323,6 +6332,8 @@ function cbDepRow(d,i){
     '<td><input class="cb-in" value="'+cbAttr(d.dep)+'" oninput="cbEditDep('+i+',\'dep\',this.value)" onchange="cbAutoKm('+i+')" placeholder="Départ"></td>'+
     '<td><input class="cb-in" value="'+cbAttr(d.arr)+'" oninput="cbEditDep('+i+',\'arr\',this.value)" onchange="cbAutoKm('+i+')" placeholder="Arrivée"></td>'+
     '<td><input class="cb-in km'+(d.kmAuto?' auto':'')+'" data-km="'+i+'" inputmode="numeric" value="'+cbAttr(d.km)+'" oninput="cbEditDep('+i+',\'km\',this.value)" placeholder="'+(cbIsVehicule(d.moyen)?'auto':'—')+'" title="'+(d.kmAuto?'Calculé automatiquement — modifiable':'')+'"></td>'+
+    '<td style="text-align:center;"><label class="cb-ar" title="Cocher si aller-retour : les km sont doublés"><input type="checkbox"'+(d.ar?' checked':'')+' onchange="cbEditDep('+i+',\'ar\',this.checked)"><span>A/R</span></label></td>'+
+    '<td class="cb-tot" data-tot="'+i+'">'+cbTotLabel(d)+'</td>'+
     '<td><input class="cb-in" value="'+cbAttr(d.client)+'" oninput="cbEditDep('+i+',\'client\',this.value)" placeholder="Client / motif"></td>'+
     '<td><button class="cb-delrow" title="Supprimer" onclick="cbDelDep('+i+')">×</button></td>'+
   '</tr>';
@@ -6348,8 +6359,8 @@ function cbLieuHtml(w){
 function cbWeekStats(){
   var w=cbWeekData();
   return {
-    km: w.deplacements.reduce(function(s,d){ return s+(parseFloat(String(d.km).replace(',','.'))||0); },0),
-    trainavion: w.deplacements.filter(function(d){ return d.moyen==='train'||d.moyen==='avion'; }).length,
+    km: w.deplacements.reduce(function(s,d){ return s+cbDepKm(d); },0),
+    trainavion: w.deplacements.reduce(function(s,d){ return s+((d.moyen==='train'||d.moyen==='avion') ? cbDepTrips(d) : 0); },0),
     nuits: w.nuits.reduce(function(s,n){ return s+(parseInt(n.nuits)||0); },0),
     tt: CB_JOURS.filter(function(j){ return w.lieu[j]==='En télétravail'; }).length
   };
@@ -6375,7 +6386,7 @@ function cbRenderWeek(){
   el.innerHTML=
     '<div id="cb-alert"></div>'+
     '<div class="cb-card"><div class="cb-card-hd"><h3>Déplacements</h3><button class="cb-addrow" onclick="cbAddDep()">+ Ajouter</button></div>'+
-    (dep.length ? '<div style="overflow-x:auto;"><table class="cb-table"><thead><tr><th>Date</th><th>Moyen</th><th>Départ</th><th>Arrivée</th><th>Km</th><th>Client visité</th><th></th></tr></thead><tbody>'+dep.map(cbDepRow).join('')+'</tbody></table></div>'
+    (dep.length ? '<div style="overflow-x:auto;"><table class="cb-table"><thead><tr><th>Date</th><th>Moyen</th><th>Départ</th><th>Arrivée</th><th>Km aller</th><th style="text-align:center;">A/R</th><th>Total</th><th>Client visité</th><th></th></tr></thead><tbody>'+dep.map(cbDepRow).join('')+'</tbody></table></div>'
                 : '<div class="cb-empty">Aucun déplacement cette semaine.</div>')+'</div>'+
     '<div class="cb-card"><div class="cb-card-hd"><h3>Nuits d\'hôtel</h3><button class="cb-addrow" onclick="cbAddNuit()">+ Ajouter</button></div>'+
     (nuits.length ? '<div style="overflow-x:auto;"><table class="cb-table"><thead><tr><th>Date</th><th>Hôtel</th><th>Ville</th><th>Pays</th><th>Nuits</th><th></th></tr></thead><tbody>'+nuits.map(cbNuitRow).join('')+'</tbody></table></div>'
@@ -6400,8 +6411,8 @@ function cbComputeTeam(year){
       var w=weeks[wk]||{};
       (w.deplacements||[]).forEach(function(d){
         var mo=cbMonthOf(d.date,wk); if(mo.y!==year) return;
-        if(d.moyen==='train'||d.moyen==='avion') months[mo.m].trainavion++;
-        months[mo.m].km += parseFloat(String(d.km).replace(',','.'))||0;
+        if(d.moyen==='train'||d.moyen==='avion') months[mo.m].trainavion += cbDepTrips(d);
+        months[mo.m].km += cbDepKm(d);
       });
       (w.nuits||[]).forEach(function(n){ var mo=cbMonthOf(n.date,wk); if(mo.y===year) months[mo.m].decouchage += parseInt(n.nuits)||0; });
       CB_JOURS.forEach(function(j,idx){
@@ -6453,7 +6464,7 @@ async function cbAutoKm(i){
     if(cbWeek!==wk || cbEmp!==emp) return;
     var cur=cbWeekData().deplacements[i];
     if(!cur || (cur.dep||'').trim()!==dep || (cur.arr||'').trim()!==arr) return;
-    cur.km=String(km); cur.kmAuto=true;
+    cur.km=String(km); cur.kmAuto=true; cbRefreshTot(i);
     inp=document.querySelector('#cb-week [data-km="'+i+'"]');
     if(inp){ inp.value=km; inp.classList.add('auto'); inp.title='Calculé automatiquement ('+dep+' → '+arr+') — modifiable'; }
     cbSave(); cbRenderStats();
