@@ -488,14 +488,27 @@
      PAGE ACCUEIL
 ══════════════════════════════════════════ -->
 <div class="view active" id="view-home">
-  <main style="max-width:760px;margin:0 auto;padding:60px 40px 80px;">
-    <div style="text-align:center;margin-bottom:56px;">
+  <style>
+    .home-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+    @media (max-width:960px){ .home-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width:480px){ .home-grid { grid-template-columns:1fr; } }
+    .home-grid > button { position:relative !important; box-sizing:border-box !important; flex-direction:column !important; align-items:flex-start !important; gap:14px !important; padding:20px 20px 18px !important; min-height:196px !important; }
+    .home-grid > button:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(16,32,52,.08); }
+    .home-grid > button > div:first-child { width:46px !important; height:46px !important; font-size:23px !important; border-radius:11px !important; }
+    .home-grid > button > div:nth-child(2) > div:first-child { font-size:15px !important; margin-bottom:6px !important; padding-right:22px; }
+    .home-grid > button > div:nth-child(2) > div:nth-child(2) { font-size:12.5px !important; line-height:1.5 !important; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+    .home-grid > button > div:last-child { display:none; }               /* flèche › inutile en tuile */
+    .home-grid > button span { position:absolute; top:16px; right:16px; font-size:0 !important; } /* cadenas en coin */
+    .home-grid > button span::before { content:'🔒'; font-size:13px; }
+  </style>
+  <main style="max-width:1080px;margin:0 auto;padding:40px 40px 60px;">
+    <div style="text-align:center;margin-bottom:34px;">
       <div style="font-size:11px;font-family:DM Mono,monospace;color:var(--text3);letter-spacing:.18em;text-transform:uppercase;margin-bottom:16px;">LASIT LASER France</div>
       <h1 style="font-size:32px;font-weight:700;letter-spacing:-.02em;color:var(--text);margin-bottom:12px;">Sales Tools</h1>
       <p style="font-size:15px;color:var(--text2);">Que voulez-vous faire aujourd'hui ?</p>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:14px;">
+    <div class="home-grid">
 
       <!-- Calculateur Prix Machine -->
       <button onclick="switchPage('prix')" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;transition:all .18s;text-align:left;" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-bg)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg2)'">
@@ -542,7 +555,7 @@
         <div style="width:52px;height:52px;border-radius:12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🧪</div>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Demandes d'échantillons</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos demandes de tests laser pour l'Italie. La liste est validée puis transmise à Emanuele, et se réinitialise chaque lundi et mercredi à 14h.</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos demandes de tests laser pour l'Italie. La liste est validée puis transmise à Emanuele, et repart à zéro après l'envoi.</div>
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
@@ -552,7 +565,7 @@
         <div style="width:52px;height:52px;border-radius:12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📓</div>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Carnet de bord</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos déplacements, nuits d'hôtel et lieu de travail par semaine. Synthèse automatique et vue d'équipe consolidée.</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Saisissez vos déplacements, nuits d'hôtel et lieu de travail par semaine. Synthèse automatique et vue d'équipe consolidée. <span id="home-carnet-lock" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);">🔒 Accès restreint</span></div>
         </div>
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
@@ -1899,6 +1912,10 @@
         <div><div class="frl" style="font-size:12px;">Début du suivi</div><div class="frh">Les semaines non remplies sont signalées à partir de cette date</div></div>
         <div class="frr"><input type="date" class="inline-num" id="cfg-carnet-debut" value="2026-11-02" onchange="saveConfig()" style="width:160px;text-align:left;padding-left:10px;"></div>
       </div>
+      <div class="field-row">
+        <div><div class="frl" style="font-size:12px;">Ouvert à tous les salariés</div><div class="frh">Décoché : le carnet de bord est protégé par le PIN. Cocher pour l'ouvrir aux salariés (prévu en 2027).</div></div>
+        <div class="frr"><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text2);"><input type="checkbox" id="cfg-carnet-ouvert" onchange="saveConfig()" style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;"> Ouvert</label></div>
+      </div>
     </div>
   </div>
 
@@ -2127,7 +2144,7 @@ function switchPage(page) {
   });
 }
 
-function lockConfig() { cbEqUnlocked=false; configUnlocked=false; maintUnlocked=false; funnelUnlocked=false; leadsUnlocked=false; switchPage('home'); }
+function lockConfig() { carnetUnlocked=false; cbEqUnlocked=false; configUnlocked=false; maintUnlocked=false; funnelUnlocked=false; leadsUnlocked=false; switchPage('home'); }
 
 let pinBuffer = '';
 let pinTarget = 'config'; // 'config' | 'maint' | 'funnel' | 'leads'
@@ -2149,7 +2166,16 @@ function openConfig() {
   $('pin-overlay').classList.remove('hidden');
 }
 function openEchantillons() { switchPage('echantillons'); renderEchant(); }
-function openCarnet() { switchPage('carnet'); cbEnter(); }
+var carnetUnlocked = false;
+function openCarnet() {
+  if (getCfg().carnetOuvert || carnetUnlocked) { switchPage('carnet'); cbEnter(); return; }
+  pinTarget = 'carnet';
+  pinBuffer = ''; updateDots(); $('pin-error').textContent = '';
+  $('pin-overlay').classList.remove('hidden');
+}
+function cbUpdateHomeLock(){
+  var el=$('home-carnet-lock'); if(el) el.style.display = getCfg().carnetOuvert ? 'none' : '';
+}
 function pinKey(k) {
   if (pinBuffer.length >= 4) return;
   pinBuffer += k; updateDots();
@@ -2171,6 +2197,7 @@ function checkPin() {
     else if (pinTarget === 'maint')  { maintUnlocked  = true; switchPage('maint'); }
     else if (pinTarget === 'funnel') { funnelUnlocked = true; switchPage('funnel'); }
     else if (pinTarget === 'leads')  { leadsUnlocked  = true; switchPage('leads'); }
+    else if (pinTarget === 'carnet')    { carnetUnlocked = true; cbEqUnlocked = true; switchPage('carnet'); cbEnter(); }
     else if (pinTarget === 'carnet-eq') { cbEqUnlocked = true; switchPage('carnet'); cbSwitchTab('equipe'); }
     else if (pinTarget === 'echant') { echantManager = true; updateEchantManagerUI(); switchPage('echantillons'); renderEchant(); }
     pinBuffer=''; updateDots();
@@ -2217,6 +2244,8 @@ function loadConfig() {
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
+  if($('cfg-carnet-ouvert')) $('cfg-carnet-ouvert').checked = !!cfg.carnetOuvert;
+  cbUpdateHomeLock();
   set('cfg-pdj',   cfg.pdj);
   set('cfg-dej',   cfg.dej);
   set('cfg-diner', cfg.diner);
@@ -2358,6 +2387,7 @@ function getDefaultConfig() {
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
     carnetDebut: '2026-11-02',
+    carnetOuvert: false,
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
     tech: {
       cisley: { nom:'Cisley TONI',      role:'Technicien installation', salaire:50000, leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
@@ -2389,6 +2419,7 @@ function saveConfig() {
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
     carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
+    carnetOuvert: $('cfg-carnet-ouvert') ? $('cfg-carnet-ouvert').checked : !!getCfg().carnetOuvert,
     commerciaux: teamGetCommerciaux(),
     pdj:   vn('cfg-pdj'), dej: vn('cfg-dej'), diner: vn('cfg-diner'),
     ship: {
@@ -2407,6 +2438,7 @@ function saveConfig() {
   populateTechSelects();
   if (typeof populateEchantCommerciaux==='function') populateEchantCommerciaux();
   if (typeof cbPopulateEmp==='function') cbPopulateEmp();
+  cbUpdateHomeLock();
   calcPage('maint');
   calcShip();
 }
