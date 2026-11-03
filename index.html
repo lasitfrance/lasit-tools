@@ -1487,9 +1487,11 @@
     <div class="ech-modal-field"><span class="ech-modal-lbl">Copie (Cc)</span><div class="ech-modal-val" id="ech-mail-cc"></div></div>
     <div class="ech-modal-field"><span class="ech-modal-lbl">Objet</span><div class="ech-modal-val" id="ech-mail-subj"></div></div>
     <div class="ech-modal-field"><span class="ech-modal-lbl">Message</span><textarea class="ech-modal-body" id="ech-mail-body" readonly></textarea></div>
+    <div class="ech-modal-field" id="ech-mail-ok" style="display:none;"><div style="padding:10px 12px;border-radius:8px;background:#EAF9F0;border:1px solid #BBE8CC;color:#15803D;font-size:13px;font-weight:600;">✓ Email envoyé — liste remise à zéro. Tu peux aussi l'envoyer sur WhatsApp.</div></div>
     <div class="ech-modal-actions">
       <button class="ech-abtn" onclick="echCloseEmail()">Fermer</button>
       <button class="ech-abtn" id="ech-copy-btn" onclick="echCopyEmail()">📋 Copier le texte</button>
+      <button class="ech-abtn" id="ech-wa-btn" onclick="echWhatsApp()" style="background:#25D366;border-color:#25D366;color:#fff;">📱 WhatsApp</button>
       <button class="ech-abtn pri" id="ech-send-btn" onclick="echSend()">✉ Envoyer maintenant</button>
     </div>
   </div>
@@ -1898,6 +1900,10 @@
         <div class="frr"><input type="text" class="inline-num" id="cfg-email-emanuele" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
       </div>
       <div class="field-row">
+        <div><div class="frl" style="font-size:12px;">WhatsApp destinataire (Italie)</div><div class="frh">Numéro au format international (+39…) — laisser vide pour masquer le bouton WhatsApp</div></div>
+        <div class="frr"><input type="text" class="inline-num" id="cfg-whatsapp-emanuele" value="+39 320 249 6559" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
+      </div>
+      <div class="field-row">
         <div><div class="frl" style="font-size:12px;">Email en copie (Cc)</div><div class="frh">Reçoit une copie de chaque envoi — laisser vide pour aucune copie</div></div>
         <div class="frr"><input type="text" class="inline-num" id="cfg-email-cc" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
       </div>
@@ -2243,6 +2249,7 @@ function loadConfig() {
   set('cfg-remise-hq',         cfg.remiseHQ);
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
+  if($('cfg-whatsapp-emanuele')) $('cfg-whatsapp-emanuele').value = (cfg.whatsappEmanuele==null ? '+39 320 249 6559' : cfg.whatsappEmanuele);
   if($('cfg-email-cc')) $('cfg-email-cc').value = (cfg.emailCc!=null) ? cfg.emailCc : 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
   if($('cfg-carnet-ouvert')) $('cfg-carnet-ouvert').checked = !!cfg.carnetOuvert;
@@ -2387,6 +2394,7 @@ function getDefaultConfig() {
     diner: 30,
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
+    whatsappEmanuele: '+39 320 249 6559',
     emailCc: 'vincent.vandomme@lasitlaser.fr',
     carnetDebut: '2026-11-02',
     carnetOuvert: false,
@@ -2420,6 +2428,7 @@ function saveConfig() {
     remiseHQ:         vn('cfg-remise-hq'),
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
+    whatsappEmanuele: $('cfg-whatsapp-emanuele') ? $('cfg-whatsapp-emanuele').value.trim() : ((getCfg().whatsappEmanuele!=null) ? getCfg().whatsappEmanuele : '+39 320 249 6559'),
     emailCc: $('cfg-email-cc') ? $('cfg-email-cc').value.trim() : ((getCfg().emailCc!=null) ? getCfg().emailCc : 'vincent.vandomme@lasitlaser.fr'),
     carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
     carnetOuvert: $('cfg-carnet-ouvert') ? $('cfg-carnet-ouvert').checked : !!getCfg().carnetOuvert,
@@ -6119,6 +6128,15 @@ function echValider(){
 var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // repli si le champ Config est vide
 function echDest(){ return ((getCfg().emailEmanuele||'').trim()) || ECH_EMAIL_TO; }
 function echCc(){ var c=getCfg().emailCc; return (c==null ? 'vincent.vandomme@lasitlaser.fr' : String(c)).trim(); }
+function echWaNum(){ var c=getCfg().whatsappEmanuele; return String(c==null ? '+39 320 249 6559' : c).replace(/[^0-9]/g,''); }
+function echWhatsApp(){
+  var num=echWaNum();
+  if(!num){ echToast('Aucun numéro WhatsApp en configuration'); return; }
+  var subj = $('ech-mail-subj') ? $('ech-mail-subj').textContent : '';
+  var corps = $('ech-mail-body') ? $('ech-mail-body').value : '';
+  var txt = (subj ? '*'+subj+'*\n\n' : '') + corps;
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(txt), '_blank');
+}
 function echEmail(){
   var list=echItems.envoi;
   if(!list.length){ echToast('Liste vide'); return; }
@@ -6133,6 +6151,9 @@ function echEmail(){
   if($('ech-mail-cc')) $('ech-mail-cc').textContent = echCc() || '— aucune copie —';
   if($('ech-mail-subj')) $('ech-mail-subj').textContent = subj;
   if($('ech-mail-body')) $('ech-mail-body').value = corps;
+  if($('ech-mail-ok')) $('ech-mail-ok').style.display='none';
+  if($('ech-send-btn')) $('ech-send-btn').style.display='';
+  if($('ech-wa-btn')) $('ech-wa-btn').style.display = echWaNum() ? '' : 'none';
   if($('ech-email-modal')) $('ech-email-modal').style.display='flex';
 }
 
@@ -6151,7 +6172,8 @@ function echSend(){
     message: corps
   }).then(function(){
     echToast('✓ Email envoyé — liste remise à zéro', 4000);
-    echCloseEmail();
+    if($('ech-send-btn')) $('ech-send-btn').style.display='none';
+    if(echWaNum() && $('ech-mail-ok')) $('ech-mail-ok').style.display='block'; else echCloseEmail();
     echResetApresEnvoi(); // remise à zéro déclenchée par l'envoi
   }).catch(function(err){
     var m = (err && (err.text || err.message)) || ('statut '+(err&&err.status));
