@@ -1484,6 +1484,7 @@
       <button class="ech-modal-x" onclick="echCloseEmail()">×</button>
     </div>
     <div class="ech-modal-field"><span class="ech-modal-lbl">Destinataire</span><div class="ech-modal-val" id="ech-mail-to"></div></div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Copie (Cc)</span><div class="ech-modal-val" id="ech-mail-cc"></div></div>
     <div class="ech-modal-field"><span class="ech-modal-lbl">Objet</span><div class="ech-modal-val" id="ech-mail-subj"></div></div>
     <div class="ech-modal-field"><span class="ech-modal-lbl">Message</span><textarea class="ech-modal-body" id="ech-mail-body" readonly></textarea></div>
     <div class="ech-modal-actions">
@@ -1896,6 +1897,10 @@
         <div><div class="frl" style="font-size:12px;">Email destinataire (Italie)</div><div class="frh">Adresse qui reçoit la liste d'échantillons — Emanuele</div></div>
         <div class="frr"><input type="text" class="inline-num" id="cfg-email-emanuele" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
       </div>
+      <div class="field-row">
+        <div><div class="frl" style="font-size:12px;">Email en copie (Cc)</div><div class="frh">Reçoit une copie de chaque envoi — laisser vide pour aucune copie</div></div>
+        <div class="frr"><input type="text" class="inline-num" id="cfg-email-cc" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
+      </div>
     </div>
   </div>
 
@@ -2243,6 +2248,7 @@ function loadConfig() {
   set('cfg-remise-hq',         cfg.remiseHQ);
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
+  if($('cfg-email-cc')) $('cfg-email-cc').value = (cfg.emailCc!=null) ? cfg.emailCc : 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
   if($('cfg-carnet-ouvert')) $('cfg-carnet-ouvert').checked = !!cfg.carnetOuvert;
   cbUpdateHomeLock();
@@ -2386,6 +2392,7 @@ function getDefaultConfig() {
     diner: 30,
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
+    emailCc: 'vincent.vandomme@lasitlaser.fr',
     carnetDebut: '2026-11-02',
     carnetOuvert: false,
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
@@ -2418,6 +2425,7 @@ function saveConfig() {
     remiseHQ:         vn('cfg-remise-hq'),
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
+    emailCc: $('cfg-email-cc') ? $('cfg-email-cc').value.trim() : ((getCfg().emailCc!=null) ? getCfg().emailCc : 'vincent.vandomme@lasitlaser.fr'),
     carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
     carnetOuvert: $('cfg-carnet-ouvert') ? $('cfg-carnet-ouvert').checked : !!getCfg().carnetOuvert,
     commerciaux: teamGetCommerciaux(),
@@ -6151,6 +6159,7 @@ function echValider(){
 
 var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // repli si le champ Config est vide
 function echDest(){ return ((getCfg().emailEmanuele||'').trim()) || ECH_EMAIL_TO; }
+function echCc(){ var c=getCfg().emailCc; return (c==null ? 'vincent.vandomme@lasitlaser.fr' : String(c)).trim(); }
 function echEmail(){
   var list=echItems.envoi;
   if(!list.length){ echToast('Liste vide'); return; }
@@ -6162,6 +6171,7 @@ function echEmail(){
   var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser :\n\n'+lignes+'\n\nCordialement,\nVincent';
   var subj='Demandes échantillons LASIT France';
   if($('ech-mail-to')) $('ech-mail-to').textContent = echDest();
+  if($('ech-mail-cc')) $('ech-mail-cc').textContent = echCc() || '— aucune copie —';
   if($('ech-mail-subj')) $('ech-mail-subj').textContent = subj;
   if($('ech-mail-body')) $('ech-mail-body').value = corps;
   if($('ech-email-modal')) $('ech-email-modal').style.display='flex';
@@ -6177,6 +6187,7 @@ function echSend(){
   if(btn){ btn.textContent='⏳ Envoi…'; btn.style.pointerEvents='none'; btn.style.opacity='.7'; }
   emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
     to_email: echDest(),
+    cc_email: echCc(),
     subject: subj,
     message: corps
   }).then(function(){
