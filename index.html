@@ -1773,7 +1773,7 @@
             <div class="frr"><input type="number" class="inline-num" id="cfg-taux-heure-trajet" value="76" min="0" max="500" step="1" oninput="saveConfig()"><span class="fru">€/h</span></div>
           </div>
           <div class="field-row">
-            <div><div style="display:flex;align-items:center;gap:7px;"><span>⛽</span><div class="frl" style="font-size:12px;">Co&ucirc;t kilom&eacute;trique</div></div><div class="frh">€/km pour le transport (d&eacute;j&agrave; au prix de vente)</div></div>
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>⛽</span><div class="frl" style="font-size:12px;">Prix de vente €/km (maintenance)</div></div><div class="frh">Factur&eacute; tel quel au client, sans marge suppl&eacute;mentaire</div></div>
             <div class="frr"><input type="number" class="inline-num" id="cfg-cout-km" value="0.98" min="0" max="10" step="0.01" oninput="saveConfig()"><span class="fru">€/km</span></div>
           </div>
           <div class="field-row">
@@ -1911,9 +1911,6 @@
     <div class="section-label">📓 Carnet de bord</div>
     <div class="card">
       <div class="field-row" style="padding-top:0;">
-        <div><div class="frl" style="font-size:12px;">Employés</div><div class="frh">Automatique : tous les commerciaux et techniciens du bloc « Équipe » ci-dessus</div></div>
-      </div>
-      <div class="field-row">
         <div><div class="frl" style="font-size:12px;">Début du suivi</div><div class="frh">Les semaines non remplies sont signalées à partir de cette date</div></div>
         <div class="frr"><input type="date" class="inline-num" id="cfg-carnet-debut" value="2026-11-02" onchange="saveConfig()" style="width:160px;text-align:left;padding-left:10px;"></div>
       </div>
@@ -1975,8 +1972,6 @@ var STAGE_LABELS = { approach:'Approach', courtship:'Courtship', decision:'Decis
 var STAGE_COLORS = { approach:'#a78bfa', courtship:'#0F9ED5', decision:'#f97316', finalization:'#6db88a' };
 var CTW_BUCKETS  = [{label:'< 25%',min:0,max:25,color:'#a78bfa'},{label:'25–50%',min:25,max:50,color:'#0F9ED5'},{label:'50–75%',min:50,max:75,color:'#f97316'},{label:'> 75%',min:75,max:101,color:'#6db88a'}];
 
-const JOURSOUV = 218;
-const CHARGES  = 0.45;
 const CONSO    = 7;
 
 let configUnlocked  = false;
@@ -2397,8 +2392,8 @@ function getDefaultConfig() {
     carnetOuvert: false,
     ship: { micromark:1200, towermark:1400, 'towermark-lx':1600, compactmark:1800, powermark:1200, custom:1200 },
     tech: {
-      cisley: { nom:'Cisley TONI',      role:'Technicien installation', salaire:50000, leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
-      avenir: { nom:'Jeremy DEROUAULT', role:'Technicien',              salaire:50000, leasing:750, peages:1800, kman:60000, base:'Angers, 49000' }
+      cisley: { nom:'Cisley TONI',      role:'Technicien installation', leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
+      avenir: { nom:'Jeremy DEROUAULT', role:'Technicien',              leasing:750, peages:1800, kman:60000, base:'Angers, 49000' }
     },
     techOrder: ['cisley','avenir'],
     commerciaux: ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT']
@@ -2976,9 +2971,7 @@ function refreshCfgIK() {
     var td = getTechData(key);
     var pc = vn('cfg-prix-carb') || 1.68;
     var ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages) / td.kman;
-    var cj = td.salaire * (1+CHARGES) / JOURSOUV;
     if ($('team-ik-'+key))   $('team-ik-'+key).textContent   = isFinite(ik) ? ik.toFixed(2) + ' €/km' : '–';
-    if ($('team-jour-'+key)) $('team-jour-'+key).textContent = isFinite(cj) ? fmtE(cj) : '–';
   });
 }
 
@@ -2988,10 +2981,10 @@ function refreshCfgIK() {
 // ══ ÉQUIPE — source unique : commerciaux + techniciens ══
 var COMM_DEFAULT = ['Vincent VANDOMME','Jean AVENAS','Aurélie GUYOT','Guillaume LEVRAT'];
 var TECH_DEFAULTS = {
-  cisley: { nom:'Cisley TONI',      role:'Technicien installation', salaire:50000, leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
-  avenir: { nom:'Jeremy DEROUAULT', role:'Technicien',              salaire:50000, leasing:750, peages:1800, kman:60000, base:'Angers, 49000' }
+  cisley: { nom:'Cisley TONI',      role:'Technicien installation', leasing:882, peages:1800, kman:60000, base:'49 chemin vert, Limonest, 69760' },
+  avenir: { nom:'Jeremy DEROUAULT', role:'Technicien',              leasing:750, peages:1800, kman:60000, base:'Angers, 49000' }
 };
-var TECH_GENERIC = { nom:'', role:'Technicien', salaire:50000, leasing:800, peages:1800, kman:60000, base:'Limonest, 69760' };
+var TECH_GENERIC = { nom:'', role:'Technicien', leasing:800, peages:1800, kman:60000, base:'Limonest, 69760' };
 // Accepte l'ancien format {1:..,5:..} (avec « Commercial N ») et le nouveau format tableau
 function normalizeCommerciaux(c){
   if (Array.isArray(c)) return c.map(function(x){ return String(x||'').trim(); }).filter(Boolean);
@@ -3065,7 +3058,7 @@ function teamGetTech(){
   teamGetTechOrder().forEach(function(id){
     var t = TEAM ? TEAM.tech[id] : getTechData(id), d = TECH_DEFAULTS[id]||TECH_GENERIC;
     out[id] = { nom:String(t.nom||'').trim(), role:t.role||d.role||'Technicien',
-      salaire:teamNum(t.salaire,d.salaire), leasing:teamNum(t.leasing,d.leasing),
+      leasing:teamNum(t.leasing,d.leasing),
       peages:(isFinite(parseFloat(t.peages)) ? parseFloat(t.peages) : d.peages), kman:teamNum(t.kman,d.kman),
       base:String(t.base||'').trim() || d.base };
   });
@@ -3093,13 +3086,11 @@ function teamRender(){
       '<div class="tcc-body">'+
         '<div class="tcc-row" style="align-items:flex-start;"><span class="tcc-lbl" style="padding-top:4px;">Base (départ)</span>'+
           '<input type="text" class="tcc-num" value="'+cbAttr(t.base)+'" placeholder="Adresse de départ" style="flex:1;margin-left:12px;text-align:left;font-size:11px;padding:4px 8px;" oninput="teamSetTech(\''+id+'\',\'base\',this.value)"></div>'+
-        num('salaire','Salaire brut annuel','€/an',500)+
         num('leasing','Leasing mensuel','€/mois',10)+
         num('peages','Péages annuels','€/an',100)+
         num('kman','Kilométrage annuel','km/an',1000)+
         '<div class="tcc-divider"></div>'+
-        '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût €/km calculé</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
-        '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût employeur/jour</span><span class="tcc-ik" id="team-jour-'+id+'">–</span></div>'+
+        '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût interne €/km (calculé)</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
       '</div></div>';
   }).join('');
   refreshCfgIK();
@@ -3335,11 +3326,9 @@ function calcPage(ns) {
   const techKey  = $(`${ns}-technicien`).value;
   const td       = getTechData(techKey);
   const ik       = getIK(techKey);
-  const coutJour = td.salaire * (1+CHARGES) / JOURSOUV;
 
   const dist  = vn(`${ns}-distance`);
   const duree = vn(`${ns}-duree`);
-  const seuilN = getSeuilNuit();
 
   // Nuitées auto
   const nuits = calcNuitsAuto(dist, duree);
@@ -3372,9 +3361,7 @@ function calcPage(ns) {
   const transport = effDist * ikEffectif;
   const hotel     = effNuits * (vn('cfg-hotel') || 80);
 
-  const margePct = ns === 'maint'
-    ? 0
-    : (cfg.margeInstall     ?? 15);
+  const margePct = 0; // tarifs maintenance déjà au prix de vente
 
   let moTrajetSale, forfaitDepl, sousTotalDepl, forfaitInterv, total, sousTotal, margeEur, joursIntervDetail, moInterv;
 
@@ -3403,18 +3390,6 @@ function calcPage(ns) {
     sousTotal = sousTotalDepl;
     total     = forfaitDepl + forfaitInterv;
     margeEur  = 0;
-  } else {
-    // ── Logique classique inchangée (prix machine / install — code séparé, non affecté en pratique) ──
-    const moTrajetClassique = coutJour * joursTrajetClassique;
-    moInterv = coutJour * effJoursInterv;
-    moTrajetSale  = moTrajetClassique;
-    sousTotalDepl = transport + hotel + effRepasTotal + moTrajetClassique;
-    forfaitDepl   = sousTotalDepl * (1 + margePct/100);
-    forfaitInterv = moInterv * (1 + margePct/100);
-    sousTotal     = sousTotalDepl + moInterv;
-    total         = forfaitDepl + forfaitInterv;
-    margeEur      = total - sousTotal;
-    joursIntervDetail = '';
   }
 
   // Mettre à jour les inputs inline si pas en mode manuel
@@ -3458,22 +3433,6 @@ function calcPage(ns) {
 
   // Validation
   if (ns === 'maint') validateMaint(ns);
-
-  // Mention à copier — uniquement pour la page mise en service
-  if (ns === 'install') {
-    const mentionEl = $(`${ns}-mention-block`);
-    if (mentionEl) {
-      const joursLabel = duree % 1 === 0 ? `${duree} jour${duree > 1 ? 's' : ''}`
-        : `${duree.toFixed(1)} jours`;
-      mentionEl.textContent =
-        `Forfait ${joursLabel} pour la mise en service de la machine et la formation des opérateurs.\nTous frais de déplacement, restauration et hébergement inclus`;
-    }
-    // Stocker les valeurs brutes pour les checkboxes du mode avancé
-    // (les labels DOM sont gérés par calcProjet uniquement)
-    if (ns === 'install') {
-      window._mesCouts = { mo: moTrajetSale + moInterv, transport: transport, hotel: hotel, repas: repas.total, hasNuits: effNuits > 0 };
-    }
-  }
 }
 
 function copyInstallMention() {
