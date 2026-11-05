@@ -570,6 +570,16 @@
         <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
       </button>
 
+      <!-- Notes techniques -->
+      <button onclick="openNT()" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;transition:all .2s;" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:52px;height:52px;border-radius:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.28);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">📚</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Notes techniques</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.5;">Chargez l'inventaire Excel : les nouvelles notes et celles mises à jour sont détectées, puis envoyées par e-mail aux techniciens.</div>
+        </div>
+        <div style="margin-left:auto;color:var(--text3);font-size:20px;flex-shrink:0;">›</div>
+      </button>
+
       <button onclick="openConfig()" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;transition:all .18s;text-align:left;" onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--bg3)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg2)'">
         <div style="width:52px;height:52px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">⚙</div>
         <div>
@@ -1476,6 +1486,24 @@
 </div>
 <div class="ech-toast" id="ech-toast"></div>
 
+<!-- Fenêtre email Notes techniques -->
+<div class="ech-modal" id="nt-email-modal" style="display:none;">
+  <div class="ech-modal-box">
+    <div class="ech-modal-hd">
+      <div class="ech-modal-title">✉ Email aux techniciens</div>
+      <button class="ech-modal-x" onclick="ntCloseEmail()">×</button>
+    </div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Destinataires</span><div class="ech-modal-val" id="nt-mail-to"></div></div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Copie (Cc)</span><div class="ech-modal-val" id="nt-mail-cc"></div></div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Objet</span><div class="ech-modal-val" id="nt-mail-subj"></div></div>
+    <div class="ech-modal-field"><span class="ech-modal-lbl">Message</span><textarea class="ech-modal-body" id="nt-mail-body"></textarea></div>
+    <div class="ech-modal-actions">
+      <button class="ech-abtn" onclick="ntCloseEmail()">Annuler</button>
+      <button class="ech-abtn pri" id="nt-send-btn" onclick="ntSend()">✉ Envoyer maintenant</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fenêtre email Emanuele -->
 <div class="ech-modal" id="ech-email-modal" style="display:none;">
   <div class="ech-modal-box">
@@ -1602,6 +1630,61 @@
       </div>
       <div id="cb-equipe-content"></div>
     </div>
+  </main>
+</div>
+
+<style>
+  :root { --nt:#D97706; --nt-bg:rgba(245,158,11,.08); --nt-br:rgba(245,158,11,.30); }
+  .nt-hero { display:flex; align-items:center; gap:16px; padding:20px 24px; border-radius:var(--radius-lg); background:var(--nt-bg); border:1px solid var(--nt-br); margin-bottom:20px; }
+  .nt-hero .ico { font-size:28px; }
+  .nt-hero h1 { font-size:20px; font-weight:700; color:var(--nt); letter-spacing:-.01em; }
+  .nt-hero .sub { font-size:11px; color:var(--text2); font-family:DM Mono,monospace; margin-top:3px; }
+  .nt-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; }
+  .nt-card-hd { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .nt-card-hd h3 { font-size:14px; font-weight:700; color:var(--text); }
+  .nt-badge { font:600 11px 'DM Mono',monospace; padding:2px 8px; border-radius:20px; background:var(--bg3); color:var(--text2); }
+  .nt-badge.new { background:#EAF9F0; color:#15803D; }
+  .nt-badge.upd { background:var(--nt-bg); color:var(--nt); }
+  .nt-badge.del { background:#FEF2F2; color:#B91C1C; }
+  .nt-card-bd { padding:16px 18px; }
+  .nt-ref { display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:var(--text2); }
+  .nt-ref b { color:var(--text); font-weight:700; }
+  .nt-drop { border:2px dashed var(--border2); border-radius:var(--radius-lg); padding:26px; text-align:center; cursor:pointer; color:var(--text2); font-size:13px; transition:all .15s; }
+  .nt-drop:hover, .nt-drop.over { border-color:var(--nt); background:var(--nt-bg); }
+  .nt-drop .ico { font-size:26px; margin-bottom:6px; }
+  .nt-item { display:flex; gap:12px; padding:12px 18px; border-top:1px solid var(--border); align-items:flex-start; }
+  .nt-item:first-child { border-top:none; }
+  .nt-item input { margin-top:3px; accent-color:var(--nt); width:16px; height:16px; flex-shrink:0; }
+  .nt-item .nm { font-size:13px; font-weight:600; color:var(--text); }
+  .nt-item .mt { font:11px 'DM Mono',monospace; color:var(--text3); margin-top:2px; }
+  .nt-item .rs { font-size:12px; color:var(--text2); margin-top:5px; line-height:1.5; }
+  .nt-msg { padding:14px 18px; border-radius:var(--radius-lg); font-size:13px; margin-bottom:16px; border:1px solid; }
+  .nt-msg.ok { background:#EAF9F0; border-color:#BBE8CC; color:#15803D; }
+  .nt-msg.info { background:var(--bg2); border-color:var(--border); color:var(--text2); }
+  .nt-msg.err { background:#FEF2F2; border-color:#FECACA; color:#B91C1C; }
+  .nt-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:4px; }
+</style>
+<div class="view" id="view-nt">
+  <main class="cb-main">
+    <div class="nt-hero">
+      <div class="ico">📚</div>
+      <div><h1>Notes techniques</h1><div class="sub">Inventaire Excel · détection des nouveautés · e-mail aux techniciens</div></div>
+    </div>
+    <div class="nt-card">
+      <div class="nt-card-hd"><h3>Dernière version connue</h3></div>
+      <div class="nt-card-bd"><div class="nt-ref" id="nt-ref">Chargement…</div></div>
+    </div>
+    <div class="nt-card">
+      <div class="nt-card-hd"><h3>Charger l'inventaire à jour</h3></div>
+      <div class="nt-card-bd">
+        <input type="file" id="nt-file" accept=".xlsx,.xls" style="display:none;" onchange="ntOnFile(this.files[0]);this.value='';">
+        <div class="nt-drop" id="nt-drop" onclick="$('nt-file').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="event.preventDefault();this.classList.remove('over');ntOnFile(event.dataTransfer.files[0]);">
+          <div class="ico">📄</div>
+          <div><b>Inventaire Notes Techniques.xlsx</b> — cliquez ou glissez le fichier ici</div>
+        </div>
+      </div>
+    </div>
+    <div id="nt-result"></div>
   </main>
 </div>
 
@@ -1911,6 +1994,23 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       NOTES TECHNIQUES
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-label">📚 Notes techniques</div>
+    <div class="card">
+      <div class="field-row" style="padding-top:0;">
+        <div><div class="frl" style="font-size:12px;">Destinataires</div><div class="frh">Adresses qui reçoivent les nouvelles notes — séparées par des virgules</div></div>
+        <div class="frr"><input type="text" class="inline-num" id="cfg-nt-dest" value="" placeholder="technicien1@lasitlaser.fr, technicien2@lasitlaser.fr" oninput="saveConfig()" style="width:340px;text-align:left;padding-left:10px;"></div>
+      </div>
+      <div class="field-row">
+        <div><div class="frl" style="font-size:12px;">Email en copie (Cc)</div><div class="frh">Laisser vide pour aucune copie</div></div>
+        <div class="frr"><input type="text" class="inline-num" id="cfg-nt-cc" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:340px;text-align:left;padding-left:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        CARNET DE BORD
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -2142,7 +2242,7 @@ function buildSimulatorHTML(ns) {
 //  NAVIGATION & PIN
 // ══════════════════════════════════════════════
 function switchPage(page) {
-  ['home','prix','maint','leads','funnel','echantillons','carnet','config'].forEach(p => {
+  ['home','prix','maint','leads','funnel','echantillons','carnet','nt','config'].forEach(p => {
     const v = $(`view-${p}`);
     const t = $(`tab-${p}`);
     if (v) v.classList.toggle('active', p === page);
@@ -2248,6 +2348,8 @@ function loadConfig() {
   set('cfg-seuil-ok',          cfg.seuilOk);
   set('cfg-remise-hq',         cfg.remiseHQ);
   if($('cfg-objectif')) $('cfg-objectif').value = cfg.objectifAnnuel || 1800000;
+  if($('cfg-nt-dest')) $('cfg-nt-dest').value = cfg.ntDest || '';
+  if($('cfg-nt-cc')) $('cfg-nt-cc').value = (cfg.ntCc==null ? 'vincent.vandomme@lasitlaser.fr' : cfg.ntCc);
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-whatsapp-emanuele')) $('cfg-whatsapp-emanuele').value = (cfg.whatsappEmanuele==null ? '+39 320 249 6559' : cfg.whatsappEmanuele);
   if($('cfg-email-cc')) $('cfg-email-cc').value = (cfg.emailCc!=null) ? cfg.emailCc : 'vincent.vandomme@lasitlaser.fr';
@@ -2394,6 +2496,7 @@ function getDefaultConfig() {
     diner: 30,
     objectifAnnuel: 1800000,
     emailEmanuele: 'vincent.vandomme@lasitlaser.fr',
+    ntDest: '', ntCc: 'vincent.vandomme@lasitlaser.fr',
     whatsappEmanuele: '+39 320 249 6559',
     emailCc: 'vincent.vandomme@lasitlaser.fr',
     carnetDebut: '2026-11-02',
@@ -2429,6 +2532,8 @@ function saveConfig() {
     objectifAnnuel: $('cfg-objectif') ? (parseFloat($('cfg-objectif').value)||1800000) : 1800000,
     emailEmanuele: $('cfg-email-emanuele') ? ($('cfg-email-emanuele').value.trim() || 'vincent.vandomme@lasitlaser.fr') : 'vincent.vandomme@lasitlaser.fr',
     whatsappEmanuele: $('cfg-whatsapp-emanuele') ? $('cfg-whatsapp-emanuele').value.trim() : ((getCfg().whatsappEmanuele!=null) ? getCfg().whatsappEmanuele : '+39 320 249 6559'),
+    ntDest: $('cfg-nt-dest') ? $('cfg-nt-dest').value.trim() : (getCfg().ntDest||''),
+    ntCc: $('cfg-nt-cc') ? $('cfg-nt-cc').value.trim() : ((getCfg().ntCc!=null) ? getCfg().ntCc : 'vincent.vandomme@lasitlaser.fr'),
     emailCc: $('cfg-email-cc') ? $('cfg-email-cc').value.trim() : ((getCfg().emailCc!=null) ? getCfg().emailCc : 'vincent.vandomme@lasitlaser.fr'),
     carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
     carnetOuvert: $('cfg-carnet-ouvert') ? $('cfg-carnet-ouvert').checked : !!getCfg().carnetOuvert,
@@ -6202,6 +6307,172 @@ function echCopyEmail(){
 function echFallbackCopy(txt, cb){
   try{ var t=$('ech-mail-body'); if(t){ t.removeAttribute('readonly'); t.select(); document.execCommand('copy'); t.setAttribute('readonly','readonly'); cb&&cb(); return; } }catch(e){}
   echToast('Copie impossible — sélectionnez le texte manuellement');
+}
+
+// ══════════════════════════════════════════════
+//  NOTES TECHNIQUES — comparaison d'inventaire + e-mail
+// ══════════════════════════════════════════════
+var NT_REF=null, NT_REF_LOADED=false, NT_NEW=null, _ntUnsub=null;
+function ntCol(h,re){ for(var i=0;i<h.length;i++){ if(re.test(String(h[i]||'').trim())) return i; } return -1; }
+function ntDateKey(v){
+  if(v instanceof Date && !isNaN(v)) return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+  if(typeof v==='number'){ var d=new Date(Math.round((v-25569)*86400000)); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
+  var m=String(v||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return String(v||'').trim();
+}
+function ntDateFr(k){ var m=String(k||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3]+'/'+m[2]+'/'+m[1] : (k||'—'); }
+function ntKey(it){ return (String(it.dossier||'').trim()+'\\'+String(it.nom||'').trim()).toLowerCase(); }
+function ntParse(wb){
+  var name = wb.SheetNames.indexOf('Inventaire')>=0 ? 'Inventaire' : wb.SheetNames[0];
+  var rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:''});
+  var hi=-1; for(var i=0;i<Math.min(rows.length,30);i++){ if(ntCol(rows[i],/^nom du fichier$/i)>=0){ hi=i; break; } }
+  if(hi<0) throw new Error('colonne « Nom du fichier » introuvable');
+  var h=rows[hi], c={ nom:ntCol(h,/^nom du fichier$/i), dossier:ntCol(h,/^dossier$/i), type:ntCol(h,/^type$/i), langue:ntCol(h,/^langue$/i),
+    date:ntCol(h,/modification|^date/i), cat:ntCol(h,/^cat/i), resume:ntCol(h,/^r[ée]sum/i) };
+  var out=[];
+  rows.slice(hi+1).forEach(function(r){
+    var nom=String(r[c.nom]||'').trim(); if(!nom) return;
+    var g=function(k){ return c[k]>=0 ? String(r[c[k]]==null?'':r[c[k]]).trim() : ''; };
+    out.push({ nom:nom, dossier:g('dossier'), type:g('type'), langue:g('langue'), date: c.date>=0 ? ntDateKey(r[c.date]) : '', cat:g('cat'), resume:g('resume') });
+  });
+  return out;
+}
+function ntCompare(ref, cur){
+  var m={}; (ref||[]).forEach(function(it){ m[ntKey(it)]=it; });
+  var seen={}, res={ nouv:[], maj:[], supp:[] };
+  cur.forEach(function(it){
+    var k=ntKey(it); seen[k]=1;
+    if(!m[k]) res.nouv.push(it);
+    else if(it.date && m[k].date!==it.date) res.maj.push(Object.assign({avant:m[k].date}, it));
+  });
+  (ref||[]).forEach(function(it){ if(!seen[ntKey(it)]) res.supp.push(it); });
+  return res;
+}
+function openNT(){ switchPage('nt'); ntListen(); ntRenderRef(); }
+function ntListen(){
+  if(_ntUnsub || !window.FS) return;
+  _ntUnsub = window.FS.doc('shared/nt_ref').onSnapshot(function(snap){
+    NT_REF = snap.exists ? snap.data() : null; NT_REF_LOADED=true; ntRenderRef();
+  }, function(e){ NT_REF_LOADED=true; console.warn('[nt] ref', e); ntRenderRef(); });
+}
+function ntRenderRef(){
+  var el=$('nt-ref'); if(!el) return;
+  if(!NT_REF_LOADED && window.FS){ el.textContent='Chargement…'; return; }
+  if(!NT_REF){ el.innerHTML='Aucune version enregistrée. Le premier fichier chargé servira de point de départ.'; return; }
+  var d=NT_REF.savedAt ? new Date(NT_REF.savedAt) : null;
+  el.innerHTML='<div>Fichier <b>'+cbAttr(NT_REF.fileName||'—')+'</b></div><div><b>'+(NT_REF.items||[]).length+'</b> notes</div><div>Enregistrée le <b>'+(d ? d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—')+'</b></div>';
+}
+function ntOnFile(f){
+  if(!f) return;
+  if(typeof XLSX==='undefined'){ ntMsg('err','La lecture Excel n\'est pas disponible — rechargez la page.'); return; }
+  var r=new FileReader();
+  r.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:false});
+      var items=ntParse(wb);
+      if(!items.length) throw new Error('aucune note trouvée');
+      NT_NEW={ fileName:f.name, items:items };
+      ntRenderResult();
+    }catch(err){ NT_NEW=null; ntMsg('err','Fichier non reconnu : '+cbAttr(err.message)+'. Chargez « Inventaire Notes Techniques.xlsx ».'); }
+  };
+  r.readAsArrayBuffer(f);
+}
+function ntMsg(kind, html){ var el=$('nt-result'); if(el) el.innerHTML='<div class="nt-msg '+kind+'">'+html+'</div>'; }
+function ntItemHtml(it, kind, idx){
+  var meta=[it.dossier, it.cat, it.langue, it.type].filter(Boolean).join(' · ');
+  var dt = kind==='maj' ? 'modifiée le '+ntDateFr(it.date)+' (avant : '+ntDateFr(it.avant)+')' : (it.date ? ntDateFr(it.date) : '');
+  return '<div class="nt-item">'+(kind==='supp' ? '<span style="width:16px;flex-shrink:0;"></span>' : '<input type="checkbox" checked data-nt="'+kind+':'+idx+'" onchange="ntUpdateBtn()">')+
+    '<div style="min-width:0;"><div class="nm">'+cbAttr(it.nom)+'</div><div class="mt">'+cbAttr(meta)+(dt?' · '+dt:'')+'</div>'+
+    (it.resume && kind!=='supp' ? '<div class="rs">'+cbAttr(it.resume)+'</div>' : '')+'</div></div>';
+}
+function ntRenderResult(){
+  var el=$('nt-result'); if(!el||!NT_NEW) return;
+  if(!NT_REF){
+    el.innerHTML='<div class="nt-msg info"><b>'+NT_NEW.items.length+' notes</b> lues dans '+cbAttr(NT_NEW.fileName)+'. Aucune version précédente : enregistrez celle-ci comme point de départ. Les prochains chargements signaleront ce qui a changé.</div>'+
+      '<div class="nt-actions"><button class="ech-abtn pri" onclick="ntSaveRef()">💾 Enregistrer comme référence</button></div>';
+    return;
+  }
+  var res=ntCompare(NT_REF.items, NT_NEW.items); NT_NEW.res=res;
+  if(!res.nouv.length && !res.maj.length && !res.supp.length){
+    el.innerHTML='<div class="nt-msg ok">✓ Aucun changement depuis la dernière version ('+NT_NEW.items.length+' notes).</div>'; return;
+  }
+  var h='';
+  function block(title, cls, list, kind){
+    if(!list.length) return '';
+    return '<div class="nt-card"><div class="nt-card-hd"><h3>'+title+'</h3><span class="nt-badge '+cls+'">'+list.length+'</span></div>'+
+      list.map(function(it,i){ return ntItemHtml(it,kind,i); }).join('')+'</div>';
+  }
+  h+=block('Nouvelles notes','new',res.nouv,'nouv');
+  h+=block('Notes mises à jour','upd',res.maj,'maj');
+  h+=block('Retirées ou renommées — non envoyées','del',res.supp,'supp');
+  var dest=ntDest();
+  h+='<div class="nt-actions">'+
+     (dest ? '' : '<div style="flex:1;font-size:12px;color:var(--red);align-self:center;">Renseignez les destinataires dans Configuration › Notes techniques.</div>')+
+     '<button class="ech-abtn" onclick="ntSaveRef()">💾 Enregistrer sans envoyer</button>'+
+     '<button class="ech-abtn pri" id="nt-email-btn" onclick="ntOpenEmail()"'+(dest?'':' disabled style="opacity:.5;pointer-events:none;"')+'>✉ Préparer l\'e-mail</button></div>';
+  el.innerHTML=h; ntUpdateBtn();
+}
+function ntSelected(){
+  var sel={nouv:[],maj:[]}; if(!NT_NEW||!NT_NEW.res) return sel;
+  document.querySelectorAll('#nt-result input[data-nt]').forEach(function(cb){
+    if(!cb.checked) return; var p=cb.getAttribute('data-nt').split(':'); sel[p[0]].push(NT_NEW.res[p[0]][+p[1]]);
+  });
+  return sel;
+}
+function ntUpdateBtn(){
+  var b=$('nt-email-btn'); if(!b) return; var s=ntSelected(), n=s.nouv.length+s.maj.length;
+  b.textContent='✉ Préparer l\'e-mail ('+n+')';
+  if(ntDest()){ b.disabled=!n; b.style.opacity=n?'':'.5'; b.style.pointerEvents=n?'':'none'; }
+}
+function ntDest(){ return String(getCfg().ntDest||'').split(/[;,]/).map(function(x){return x.trim();}).filter(Boolean).join(', '); }
+function ntCc(){ var c=getCfg().ntCc; return (c==null ? 'vincent.vandomme@lasitlaser.fr' : String(c)).trim(); }
+function ntBody(sel){
+  function bloc(list, maj){
+    return list.map(function(it,i){
+      var l=(i+1)+'. '+it.nom.replace(/\.(pdf|docx?|pptx?|jpe?g|png|mp4)$/i,'');
+      l+='\n   Dossier : '+it.dossier+(it.type?' — '+it.type:'')+(it.langue&&it.langue!=='—'?' — '+it.langue:'');
+      if(maj) l+='\n   Mise à jour du '+ntDateFr(it.date);
+      if(it.resume) l+='\n   '+it.resume;
+      return l;
+    }).join('\n\n');
+  }
+  var t='Bonjour,\n\n';
+  var n=sel.nouv.length+sel.maj.length;
+  t+=(n>1?'Des notes techniques ont été ajoutées ou mises à jour':'Une note technique a été ajoutée ou mise à jour')+' dans Service and Support › 03 Procédures et Notes Techniques.\n';
+  if(sel.nouv.length) t+='\nNOUVELLES NOTES\n\n'+bloc(sel.nouv,false)+'\n';
+  if(sel.maj.length) t+='\nNOTES MISES À JOUR\n\n'+bloc(sel.maj,true)+'\n';
+  t+='\nBonne lecture,\nVincent';
+  return t;
+}
+function ntOpenEmail(){
+  var sel=ntSelected(); if(!sel.nouv.length && !sel.maj.length){ echToast('Aucune note sélectionnée'); return; }
+  var n=sel.nouv.length+sel.maj.length;
+  $('nt-mail-to').textContent=ntDest();
+  $('nt-mail-cc').textContent=ntCc()||'— aucune copie —';
+  $('nt-mail-subj').textContent='Notes techniques : '+n+' nouveauté'+(n>1?'s':'');
+  $('nt-mail-body').value=ntBody(sel);
+  $('nt-email-modal').style.display='flex';
+}
+function ntCloseEmail(){ if($('nt-email-modal')) $('nt-email-modal').style.display='none'; }
+function ntSend(){
+  if(typeof emailjs==='undefined'){ echToast('⚠ EmailJS non chargé — réessayez'); return; }
+  var btn=$('nt-send-btn');
+  if(btn){ btn.textContent='⏳ Envoi…'; btn.style.pointerEvents='none'; btn.style.opacity='.7'; }
+  emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    to_email: ntDest(), cc_email: ntCc(), subject: $('nt-mail-subj').textContent, message: $('nt-mail-body').value
+  }).then(function(){
+    ntCloseEmail(); ntSaveRef('✓ E-mail envoyé aux techniciens — version enregistrée');
+  }).catch(function(err){
+    var m=(err && (err.text||err.message)) || ('statut '+(err&&err.status));
+    echToast('✕ Échec de l\'envoi : '+m, 5000); console.error('[EmailJS] nt', err);
+  }).finally(function(){ if(btn){ btn.textContent='✉ Envoyer maintenant'; btn.style.pointerEvents=''; btn.style.opacity=''; } });
+}
+function ntSaveRef(okMsg){
+  if(!NT_NEW) return;
+  var doc={ fileName:NT_NEW.fileName, items:NT_NEW.items, savedAt:Date.now() };
+  var done=function(){ NT_REF=doc; NT_NEW=null; ntRenderRef(); ntMsg('ok', okMsg||'✓ Version enregistrée ('+doc.items.length+' notes). Elle servira de comparaison au prochain chargement.'); };
+  if(!window.FS){ done(); return; }
+  window.FS.doc('shared/nt_ref').set(doc).then(done).catch(function(e){ ntMsg('err','Enregistrement impossible : '+cbAttr(e.code||e.message)); });
 }
 
 // ── Auto-reset : Lundi 9h30 et Mercredi 9h30 (heure locale, après la sélection Italie à 8h30) ──
