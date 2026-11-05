@@ -6264,6 +6264,8 @@ function echEmail(){
 
 // Identifiants EmailJS
 var EMAILJS_SERVICE='service_il4k8e9', EMAILJS_TEMPLATE='template_c3qlyj9';
+// Le modèle EmailJS utilise {{{message}}} (HTML) : on échappe le texte avant envoi
+function mailEsc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function echSend(){
   if(typeof emailjs==='undefined'){ echToast('⚠ EmailJS non chargé — réessayez'); return; }
   var btn=$('ech-send-btn');
@@ -6274,7 +6276,7 @@ function echSend(){
     to_email: echDest(),
     cc_email: echCc(),
     subject: subj,
-    message: corps
+    message: mailEsc(corps)
   }).then(function(){
     echToast('✓ Email envoyé — liste remise à zéro', 4000);
     if($('ech-send-btn')) $('ech-send-btn').style.display='none';
@@ -6444,6 +6446,13 @@ function ntBody(sel){
   t+='\nBonne lecture,\nVincent';
   return t;
 }
+function ntHtml(t){
+  // Titres des NT (lignes « 1. … ») et intitulés de section en gras
+  return mailEsc(t).split('\n').map(function(l){
+    if(/^\d+\.\s/.test(l) || /^(NOUVELLES NOTES|NOTES MISES À JOUR)$/.test(l)) return '<b>'+l+'</b>';
+    return l;
+  }).join('\n');
+}
 function ntOpenEmail(){
   var sel=ntSelected(); if(!sel.nouv.length && !sel.maj.length){ echToast('Aucune note sélectionnée'); return; }
   var n=sel.nouv.length+sel.maj.length;
@@ -6459,7 +6468,7 @@ function ntSend(){
   var btn=$('nt-send-btn');
   if(btn){ btn.textContent='⏳ Envoi…'; btn.style.pointerEvents='none'; btn.style.opacity='.7'; }
   emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-    to_email: ntDest(), cc_email: ntCc(), subject: $('nt-mail-subj').textContent, message: $('nt-mail-body').value
+    to_email: ntDest(), cc_email: ntCc(), subject: $('nt-mail-subj').textContent, message: ntHtml($('nt-mail-body').value)
   }).then(function(){
     ntCloseEmail(); ntSaveRef('✓ E-mail envoyé aux techniciens — version enregistrée');
   }).catch(function(err){
