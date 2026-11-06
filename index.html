@@ -1481,6 +1481,7 @@
         <div class="ech-actbar" id="ech-actbar" style="display:none;">
           <button class="ech-abtn pri" id="ech-valider-btn" onclick="echValider()">✓ Établir la liste finale</button>
           <button class="ech-abtn" id="ech-email-btn" onclick="echEmail()" style="display:none;">📧 Envoyer à Emanuele</button>
+          <button class="ech-abtn" id="ech-close-btn" onclick="echCloturerMaintenant()" style="display:none;margin-left:auto;">🔒 Clôturer maintenant</button>
         </div>
       </div>
     </div>
@@ -6064,6 +6065,9 @@ function echMarkSent(){
   ECH_SENT_AT=Date.now(); echTick();
   if(window.FS) window.FS.doc('shared/echant_lock').set({sentAt:ECH_SENT_AT}).catch(function(e){ console.warn('[echant] lock set', e); });
 }
+function echCloturerMaintenant(){
+  echMarkSent(); echToast('🔒 Créneau clôturé — demandes fermées jusqu\'à la réouverture', 4000);
+}
 function echRouvrir(){
   ECH_SENT_AT=0; echTick();
   if(window.FS) window.FS.doc('shared/echant_lock').set({sentAt:0}).catch(function(){});
@@ -6114,6 +6118,7 @@ function echApplyFormLock(st){
   } else {
     lock.style.display='none';
   }
+  var cbn=$('ech-close-btn'); if(cbn) cbn.style.display = (st.state==='ouverte') ? '' : 'none';
 }
 var _echPrevState=null;
 function echTick(){
