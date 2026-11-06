@@ -1426,6 +1426,7 @@
           <div class="ech-lock-ico">🔒</div>
           <div class="ech-lock-title">Demandes fermées</div>
           <div class="ech-lock-sub" id="ech-lock-sub">Réouverture prochainement</div>
+          <button class="ech-abtn" id="ech-reopen-btn" onclick="echRouvrir()" style="display:none;margin-top:12px;">↺ Rouvrir les demandes</button>
         </div>
         <div class="ech-card-bd">
           <div class="ech-field">
@@ -6039,11 +6040,34 @@ function echCycleState(now){
   else if(m>=2460 && m<3450){ state='cloturee'; creneau='mercredi'; sub=(m<3390)?'validation':'selection'; } // mar 17h → mer 9h30
   else if(m>=3450 && m<6780){ state='ouverte'; creneau='lundi'; }         // mer 9h30 → ven 17h
   else { state='cloturee'; creneau='lundi'; sub=(m>=6780 || m<510)?'validation':'selection'; }               // ven 17h → lun 9h30
-  return {
+  var st={
     state:state, creneau:creneau, sub:sub||'collecte', now:now,
     closeAt: echNextSlot([[2,17,0],[5,17,0]]),
     reopenAt: echNextSlot([[1,9,30],[3,9,30]])
   };
+  // Clôture anticipée : la liste a déjà été envoyée à l'Italie pendant ce créneau
+  if(st.state==='ouverte' && ECH_SENT_AT && ECH_SENT_AT >= echLastResetSlot() && ECH_SENT_AT <= now.getTime()){
+    st.state='cloturee'; st.sub='validation'; st.early=true; st.sentAt=new Date(ECH_SENT_AT);
+  }
+  return st;
+}
+var ECH_SENT_AT=0, _echLockUnsub=null;
+function echLockListen(){
+  if(_echLockUnsub || !window.FS) return;
+  window.DB_READY.then(function(){
+    _echLockUnsub = window.FS.doc('shared/echant_lock').onSnapshot(function(snap){
+      ECH_SENT_AT = (snap.exists && snap.data().sentAt) || 0; echTick();
+    }, function(e){ console.warn('[echant] lock KO', e); });
+  });
+}
+function echMarkSent(){
+  ECH_SENT_AT=Date.now(); echTick();
+  if(window.FS) window.FS.doc('shared/echant_lock').set({sentAt:ECH_SENT_AT}).catch(function(e){ console.warn('[echant] lock set', e); });
+}
+function echRouvrir(){
+  ECH_SENT_AT=0; echTick();
+  if(window.FS) window.FS.doc('shared/echant_lock').set({sentAt:0}).catch(function(){});
+  echToast('Demandes rouvertes jusqu\'à la clôture normale');
 }
 function echRenderStatus(st){
   var el=$('ech-status'); if(!el) return;
@@ -6059,13 +6083,13 @@ function echRenderStatus(st){
       '<div class="ech-countdown"><div class="ech-countdown-n">'+cd+'</div><div class="ech-countdown-l">avant clôture</div></div>';
   } else {
     var cd2 = echFmtCountdown(st.reopenAt - st.now);
-    var title = st.sub==='selection' ? "Sélection par l'Italie en cours" : 'Demandes clôturées · en validation';
+    var title = st.early ? "Liste envoyée à l'Italie · demandes fermées" : (st.sub==='selection' ? "Sélection par l'Italie en cours" : 'Demandes clôturées · en validation');
     el.className='ech-status cloturee';
     el.innerHTML =
       '<span class="ech-status-dot"></span>'+
       '<div class="ech-status-main">'+
         '<div class="ech-status-title">'+title+'</div>'+
-        '<div class="ech-status-sub">Liste transmise à l\'Italie · sélection '+st.creneau+' 8h30 · réouverture '+echDayLabel(st.reopenAt)+'</div>'+
+        '<div class="ech-status-sub">'+(st.early ? 'Liste transmise le '+echDayLabel(st.sentAt) : 'Liste transmise à l\'Italie')+' · sélection '+st.creneau+' 8h30 · réouverture '+echDayLabel(st.reopenAt)+'</div>'+
       '</div>'+
       '<div class="ech-countdown"><div class="ech-countdown-n">'+cd2+'</div><div class="ech-countdown-l">avant réouverture</div></div>';
   }
@@ -6085,7 +6109,8 @@ function echApplyFormLock(st){
   var lock=$('ech-form-lock'); if(!lock) return;
   if(st.state==='cloturee'){
     lock.style.display='flex';
-    var sub=$('ech-lock-sub'); if(sub) sub.textContent='Réouverture '+echDayLabel(st.reopenAt);
+    var sub=$('ech-lock-sub'); if(sub) sub.textContent=(st.early ? 'Liste déjà envoyée à l\'Italie · ' : '')+'Réouverture '+echDayLabel(st.reopenAt);
+    var rb=$('ech-reopen-btn'); if(rb) rb.style.display = (st.early && echantManager) ? '' : 'none';
   } else {
     lock.style.display='none';
   }
@@ -6111,6 +6136,7 @@ function initEchantillons(){
   populateEchantCommerciaux();
   updateEchantManagerUI();
   echStartListener();
+  echLockListen();
 }
 
 function echStartListener(){
@@ -6154,6 +6180,7 @@ function updateEchantManagerUI(){
   if(btn){ btn.classList.toggle('on', echantManager); btn.textContent = echantManager ? '🔓 Gestion active' : '🔒 Mode gestion'; }
   var bar=$('ech-actbar');
   if(bar) bar.style.display = echantManager ? 'flex' : 'none';
+  if(typeof echTick==='function' && $('ech-status')) echTick();
 }
 
 function renderEchant(){
@@ -6280,6 +6307,7 @@ function echSend(){
     message: mailEsc(corps).split('\n').map(function(l){ return /^\d+\.\s/.test(l) ? '<b>'+l+'</b>' : l; }).join('\n')
   }).then(function(){
     echToast('✓ Email envoyé — liste remise à zéro', 4000);
+    echMarkSent();
     if($('ech-send-btn')) $('ech-send-btn').style.display='none';
     if(echWaNum() && $('ech-mail-ok')) $('ech-mail-ok').style.display='block'; else echCloseEmail();
     echResetApresEnvoi(); // remise à zéro déclenchée par l'envoi
