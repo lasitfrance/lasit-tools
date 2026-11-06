@@ -6240,7 +6240,7 @@ function echWhatsApp(){
   if(!num){ echToast('Aucun numéro WhatsApp en configuration'); return; }
   var subj = $('ech-mail-subj') ? $('ech-mail-subj').textContent : '';
   var corps = $('ech-mail-body') ? $('ech-mail-body').value : '';
-  var txt = (subj ? '*'+subj+'*\n\n' : '') + corps;
+  var txt = (subj ? '*'+subj+'*\n\n' : '') + corps.split('\n').map(function(l){ return /^\d+\.\s/.test(l) ? '*'+l+'*' : l; }).join('\n');
   window.open('https://wa.me/'+num+'?text='+encodeURIComponent(txt), '_blank');
 }
 function echEmail(){
@@ -6250,7 +6250,7 @@ function echEmail(){
     var l = (i+1)+'. '+d.client+' — '+d.commercial+' (urgence : '+echUrgTxt(d.urgence)+')';
     if(d.note) l += '\n   Commentaire : '+d.note;
     return l;
-  }).join('\n');
+  }).join('\n\n');
   var corps='Bonjour Emanuele,\n\nVoici la liste des échantillons à réaliser :\n\n'+lignes+'\n\nCordialement,\nVincent';
   var subj='Demandes échantillons LASIT France';
   if($('ech-mail-to')) $('ech-mail-to').textContent = echDest();
@@ -6277,7 +6277,7 @@ function echSend(){
     to_email: echDest(),
     cc_email: echCc(),
     subject: subj,
-    message: mailEsc(corps)
+    message: mailEsc(corps).split('\n').map(function(l){ return /^\d+\.\s/.test(l) ? '<b>'+l+'</b>' : l; }).join('\n')
   }).then(function(){
     echToast('✓ Email envoyé — liste remise à zéro', 4000);
     if($('ech-send-btn')) $('ech-send-btn').style.display='none';
