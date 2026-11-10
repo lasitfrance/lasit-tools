@@ -1428,6 +1428,7 @@
           <div class="ech-lock-sub" id="ech-lock-sub">Réouverture prochainement</div>
           <button class="ech-abtn" id="ech-reopen-btn" onclick="echRouvrir()" style="display:none;margin-top:12px;">↺ Rouvrir les demandes</button>
         </div>
+        <div id="ech-late-note" style="display:none;margin:14px 18px 0;padding:9px 12px;border-radius:8px;background:#FFF7ED;border:1px solid #FED7AA;color:#C2410C;font-size:12px;font-weight:600;"><div style="display:flex;align-items:center;gap:10px;"><span style="flex:1;">🔓 Mode gestion — demandes fermées aux salariés, ajout hors délai autorisé</span><button class="ech-abtn" id="ech-reopen-btn2" onclick="echRouvrir()" style="display:none;padding:5px 10px;font-size:11px;">↺ Rouvrir à tous</button></div></div>
         <div class="ech-card-bd">
           <div class="ech-field">
             <label class="ech-lbl">Commercial</label>
@@ -6111,7 +6112,9 @@ function echRenderStepper(st){
 }
 function echApplyFormLock(st){
   var lock=$('ech-form-lock'); if(!lock) return;
-  if(st.state==='cloturee'){
+  var late=$('ech-late-note'); if(late) late.style.display = (st.state==='cloturee' && echantManager) ? 'block' : 'none';
+  var rb2=$('ech-reopen-btn2'); if(rb2) rb2.style.display = (st.early && echantManager) ? '' : 'none';
+  if(st.state==='cloturee' && !echantManager){
     lock.style.display='flex';
     var sub=$('ech-lock-sub'); if(sub) sub.textContent=(st.early ? 'Liste déjà envoyée à l\'Italie · ' : '')+'Réouverture '+echDayLabel(st.reopenAt);
     var rb=$('ech-reopen-btn'); if(rb) rb.style.display = (st.early && echantManager) ? '' : 'none';
@@ -6218,7 +6221,7 @@ function renderEchant(){
 }
 
 function echAdd(){
-  if(echCycleState(new Date()).state==='cloturee'){ echToast('⚠ Demandes fermées pour ce créneau'); return; }
+  if(echCycleState(new Date()).state==='cloturee' && !echantManager){ echToast('⚠ Demandes fermées pour ce créneau'); return; }
   var com=$('ech-com').value, client=$('ech-client').value.trim(), tracking=$('ech-tracking').checked;
   var note=$('ech-note')?$('ech-note').value.trim():'';
   if(!com){ echToast('⚠ Sélectionne un commercial'); return; }
