@@ -1994,6 +1994,10 @@
         <div><div class="frl" style="font-size:12px;">Email en copie (Cc)</div><div class="frh">Reçoit une copie de chaque envoi — laisser vide pour aucune copie</div></div>
         <div class="frr"><input type="text" class="inline-num" id="cfg-email-cc" value="vincent.vandomme@lasitlaser.fr" oninput="saveConfig()" style="width:280px;text-align:left;padding-left:10px;"></div>
       </div>
+      <div class="field-row">
+        <div><div class="frl" style="font-size:12px;">Commerciaux en copie</div><div class="frh">Ajoute en Cc tous les commerciaux du bloc « Équipe » (adresses saisies à côté de leur nom)</div></div>
+        <div class="frr"><label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="cfg-ech-cc-comm" checked onchange="saveConfig()" style="width:16px;height:16px;"> Activé</label></div>
+      </div>
     </div>
   </div>
 
@@ -2356,6 +2360,7 @@ function loadConfig() {
   if($('cfg-nt-cc')) $('cfg-nt-cc').value = (cfg.ntCc==null ? 'vincent.vandomme@lasitlaser.fr' : cfg.ntCc);
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-whatsapp-emanuele')) $('cfg-whatsapp-emanuele').value = (cfg.whatsappEmanuele==null ? '+39 320 249 6559' : cfg.whatsappEmanuele);
+  if($('cfg-ech-cc-comm')) $('cfg-ech-cc-comm').checked = cfg.echCcCommerciaux!==false;
   if($('cfg-email-cc')) $('cfg-email-cc').value = (cfg.emailCc!=null) ? cfg.emailCc : 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
   if($('cfg-carnet-ouvert')) $('cfg-carnet-ouvert').checked = !!cfg.carnetOuvert;
@@ -2538,10 +2543,12 @@ function saveConfig() {
     whatsappEmanuele: $('cfg-whatsapp-emanuele') ? $('cfg-whatsapp-emanuele').value.trim() : ((getCfg().whatsappEmanuele!=null) ? getCfg().whatsappEmanuele : '+39 320 249 6559'),
     ntDest: $('cfg-nt-dest') ? $('cfg-nt-dest').value.trim() : (getCfg().ntDest||''),
     ntCc: $('cfg-nt-cc') ? $('cfg-nt-cc').value.trim() : ((getCfg().ntCc!=null) ? getCfg().ntCc : 'vincent.vandomme@lasitlaser.fr'),
+    echCcCommerciaux: $('cfg-ech-cc-comm') ? $('cfg-ech-cc-comm').checked : (getCfg().echCcCommerciaux!==false),
     emailCc: $('cfg-email-cc') ? $('cfg-email-cc').value.trim() : ((getCfg().emailCc!=null) ? getCfg().emailCc : 'vincent.vandomme@lasitlaser.fr'),
     carnetDebut: $('cfg-carnet-debut') ? ($('cfg-carnet-debut').value || '2026-11-02') : '2026-11-02',
     carnetOuvert: $('cfg-carnet-ouvert') ? $('cfg-carnet-ouvert').checked : !!getCfg().carnetOuvert,
     commerciaux: teamGetCommerciaux(),
+    commEmails: teamGetCommEmails(),
     pdj:   vn('cfg-pdj'), dej: vn('cfg-dej'), diner: vn('cfg-diner'),
     ship: {
       micromark:      vn('cfg-ship-micromark'),
@@ -3112,6 +3119,15 @@ function normalizeCommerciaux(c){
   return null;
 }
 function getCommerciaux(){ var n=normalizeCommerciaux(getCfg().commerciaux); return (n && n.length) ? n : COMM_DEFAULT.slice(); }
+// Adresse e-mail d'un commercial : saisie en Config, sinon déduite (prenom.nom@lasitlaser.fr)
+function commGuessEmail(nom){
+  var p=String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().split(/\s+/).filter(Boolean);
+  return p.length>=2 ? p[0]+'.'+p.slice(1).join('')+'@lasitlaser.fr' : '';
+}
+function getCommEmail(nom){
+  var m=getCfg().commEmails||{}; var e=m[nom];
+  return (e==null ? commGuessEmail(nom) : String(e)).trim();
+}
 function getTechIds(){
   var cfg=getCfg(), t=cfg.tech||{};
   var ids = (Array.isArray(cfg.techOrder) && cfg.techOrder.length) ? cfg.techOrder.slice() : Object.keys(t);
@@ -3166,8 +3182,13 @@ var TEAM = null;
 function teamNum(v, def){ var n=parseFloat(String(v).replace(',','.')); return isFinite(n) && n>0 ? n : def; }
 function teamLoad(){
   TEAM = { commerciaux:getCommerciaux(), techOrder:getTechIds(), tech:{} };
+  TEAM.commEmails = TEAM.commerciaux.map(function(n){ return getCommEmail(n); });
   TEAM.techOrder.forEach(function(id){ TEAM.tech[id]=getTechData(id); });
   teamRender();
+}
+function teamGetCommEmails(){
+  if(!TEAM) return getCfg().commEmails||{};
+  var m={}; TEAM.commerciaux.forEach(function(n,i){ n=String(n||'').trim(); if(n) m[n]=String((TEAM.commEmails||[])[i]||'').trim(); }); return m;
 }
 function teamGetCommerciaux(){ return TEAM ? TEAM.commerciaux.map(function(x){ return String(x||'').trim(); }).filter(Boolean) : getCommerciaux(); }
 function teamGetTechOrder(){ return TEAM ? TEAM.techOrder.slice() : getTechIds(); }
@@ -3188,6 +3209,7 @@ function teamRender(){
   if (cl) cl.innerHTML = TEAM.commerciaux.length ? TEAM.commerciaux.map(function(n,i){
     return '<div class="team-row"><span class="team-av" id="team-cav-'+i+'">'+(cbAttr(techInitiales(n))||'?')+'</span>'+
       '<input class="team-in" value="'+cbAttr(n)+'" placeholder="Prénom NOM" oninput="teamSetComm('+i+',this.value)">'+
+      '<input class="team-in" type="email" style="flex:1.3;font-family:\'DM Mono\',monospace;font-size:12px;" value="'+cbAttr((TEAM.commEmails||[])[i]||'')+'" placeholder="e-mail" title="Adresse e-mail (copie des demandes d\'échantillons)" oninput="teamSetCommEmail('+i+',this.value)">'+
       '<button class="team-del" title="Retirer ce commercial" onclick="teamDelComm('+i+')">×</button></div>';
   }).join('') : '<div class="team-empty">Aucun commercial — ajoutes-en un.</div>';
   var tl=$('team-tech-list');
@@ -3213,19 +3235,23 @@ function teamRender(){
   }).join('');
   refreshCfgIK();
 }
+function teamSetCommEmail(i,v){ TEAM.commEmails=TEAM.commEmails||[]; TEAM.commEmails[i]=v; saveConfig(); }
 function teamSetComm(i,v){
+  TEAM.commEmails=TEAM.commEmails||[];
+  var old=TEAM.commEmails[i]||'';
+  if(!old || old===commGuessEmail(TEAM.commerciaux[i])){ TEAM.commEmails[i]=commGuessEmail(v); var ins=document.querySelectorAll('#team-comm-list .team-row')[i]; if(ins){ var e=ins.querySelectorAll('.team-in')[1]; if(e) e.value=TEAM.commEmails[i]; } }
   TEAM.commerciaux[i]=v;
   var av=$('team-cav-'+i); if (av) av.textContent=techInitiales(v)||'?';
   saveConfig();
 }
 function teamAddComm(){
-  TEAM.commerciaux.push(''); teamRender();
+  TEAM.commerciaux.push(''); (TEAM.commEmails=TEAM.commEmails||[]).push(''); teamRender();
   var ins=document.querySelectorAll('#team-comm-list .team-in'); if (ins.length) ins[ins.length-1].focus();
 }
 function teamDelComm(i){
   var n=TEAM.commerciaux[i]||'ce commercial';
   if (TEAM.commerciaux[i] && !confirm('Retirer '+n+' de l\'équipe commerciale ?\n\nSes données (pipeline, carnet de bord) ne sont pas supprimées.')) return;
-  TEAM.commerciaux.splice(i,1); teamRender(); saveConfig();
+  TEAM.commerciaux.splice(i,1); if(TEAM.commEmails) TEAM.commEmails.splice(i,1); teamRender(); saveConfig();
 }
 function teamSetTech(id,f,v){
   TEAM.tech[id][f]=v;
@@ -6268,7 +6294,14 @@ function echValider(){
 
 var ECH_EMAIL_TO = 'vincent.vandomme@lasitlaser.fr'; // repli si le champ Config est vide
 function echDest(){ return ((getCfg().emailEmanuele||'').trim()) || ECH_EMAIL_TO; }
-function echCc(){ var c=getCfg().emailCc; return (c==null ? 'vincent.vandomme@lasitlaser.fr' : String(c)).trim(); }
+function echCc(){
+  var c=getCfg().emailCc, base=(c==null ? 'vincent.vandomme@lasitlaser.fr' : String(c)).trim();
+  var list=base.split(/[;,]/).map(function(x){return x.trim();}).filter(Boolean);
+  if(getCfg().echCcCommerciaux!==false){
+    getCommerciaux().forEach(function(n){ var e=getCommEmail(n); if(e) list.push(e); });
+  }
+  var seen={}; return list.filter(function(e){ var k=e.toLowerCase(); if(seen[k]) return false; seen[k]=1; return true; }).join(', ');
+}
 function echWaNum(){ var c=getCfg().whatsappEmanuele; return String(c==null ? '+39 320 249 6559' : c).replace(/[^0-9]/g,''); }
 function echWhatsApp(){
   var num=echWaNum();
