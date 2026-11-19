@@ -1713,6 +1713,13 @@
        BLOC — ÉQUIPE (source unique : commerciaux + techniciens)
   ══════════════════════════════════════════ -->
   <style>
+    .cr-block { margin:0; padding:12px 22px 14px; background:var(--bg3); border-top:1px dashed var(--border2); font-size:12px; color:var(--text2); }
+    .cr-block .cr-t { font:700 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--text3); margin-bottom:6px; }
+    .cr-block .cr-r { display:flex; justify-content:space-between; gap:12px; padding:3px 0; }
+    .cr-block .cr-r span:last-child { font-family:'DM Mono',monospace; white-space:nowrap; }
+    .cr-block .cr-tot { border-top:1px solid var(--border2); margin-top:4px; padding-top:6px; font-weight:700; color:var(--text); }
+    .cr-block .cr-m { font-weight:700; color:var(--green); }
+    .cr-block .cr-m.neg { color:var(--red); }
     .zone-result { margin-top:8px; padding:10px 12px; border-radius:var(--radius); background:var(--bg3); border:1px solid var(--border); font-size:12px; color:var(--text2); line-height:1.6; }
     .zone-result b { color:var(--text); }
     .zone-pill { display:inline-block; font:700 12px 'DM Mono',monospace; padding:1px 9px; border-radius:20px; margin:0 2px; }
@@ -2239,9 +2246,8 @@ function buildSimulatorHTML(ns) {
   +          " <span id=\"" + n + "-auto-repas\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
   +        "</span><span class=\"trv\" id=\"" + n + "-lb-repas\">&ndash;</span></div>";
 
-  h +=     "<div class=\"total-row\" style=\"background:var(--bg3);\"><span class=\"trl\" style=\"color:var(--text2);\">Co&ucirc;t frais (transport+h&eacute;b.+repas)</span><span class=\"trv\" style=\"font-size:13px;color:var(--text2);\" id=\"" + n + "-lb-soustotal-depl\">&ndash;</span></div>";
-  h +=     "<div class=\"total-row\" id=\"" + n + "-row-marge-frais\" style=\"background:var(--bg3);\"><span class=\"trl\" style=\"color:var(--green);font-size:12px;\">Marge frais (<span id=\"" + n + "-lb-marge-pct\">&ndash;</span>%)</span><span class=\"trv\" style=\"font-size:13px;color:var(--green);\" id=\"" + n + "-lb-marge-eur\">&ndash;</span></div>";
   h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait d&eacute;placement HT</span><span class=\"trv\" id=\"" + n + "-lb-forfait-depl\">&ndash;</span></div>";
+  h +=     "<div class=\"cr-block\" id=\"" + n + "-cout-reel\"></div>";
 
   // ── FORFAIT INTERVENTION ──
   h +=     "<div style=\"padding:18px 22px 4px;font-size:11px;font-weight:700;color:var(--accent);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.06em;\">Forfait intervention</div>";
@@ -3220,6 +3226,7 @@ function teamGetTech(){
     out[id] = { nom:String(t.nom||'').trim(), role:t.role||d.role||'Technicien',
       leasing:teamNum(t.leasing,d.leasing),
       peages:(isFinite(parseFloat(t.peages)) ? parseFloat(t.peages) : d.peages), kman:teamNum(t.kman,d.kman),
+      coutHoraire:(isFinite(parseFloat(t.coutHoraire)) && parseFloat(t.coutHoraire)>0 ? parseFloat(t.coutHoraire) : 0),
       base:String(t.base||'').trim() || d.base };
   });
   return out;
@@ -3236,7 +3243,7 @@ function teamRender(){
   var tl=$('team-tech-list');
   if (tl) tl.innerHTML = TEAM.techOrder.map(function(id,i){
     var t=TEAM.tech[id], nom=String(t.nom||'').trim(), pend=(!nom||nom==='À venir');
-    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f])+'" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
+    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f]==null||(f==='coutHoraire'&&!+t[f])?'':t[f])+'" placeholder="–" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
     return '<div class="tcc-card">'+
       '<div class="tcc-header">'+
         '<div class="tcc-av'+(pend?' pending':'')+'" id="team-tav-'+id+'">'+(pend?'?':cbAttr(techInitiales(nom)))+'</div>'+
@@ -3250,6 +3257,7 @@ function teamRender(){
         num('leasing','Leasing mensuel','€/mois',10)+
         num('peages','Péages annuels','€/an',100)+
         num('kman','Kilométrage annuel','km/an',1000)+
+        num('coutHoraire','Coût horaire interne (chargé)','€/h',1)+
         '<div class="tcc-divider"></div>'+
         '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût interne €/km (calculé)</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
       '</div></div>';
@@ -3587,6 +3595,23 @@ function calcPage(ns) {
   if ($(`${ns}-lb-repas`)) $(`${ns}-lb-repas`).textContent = fmtE(effRepasTotal);
   if ($(`${ns}-lb-soustotal-depl`)) $(`${ns}-lb-soustotal-depl`).textContent = fmtE(sousTotalDepl);
   if ($(`${ns}-lb-forfait-depl`))   $(`${ns}-lb-forfait-depl`).textContent   = fmtE(forfaitDepl);
+  if ($(`${ns}-cout-reel`)) {
+    // Coût réel (interne, non facturé) : km × coût interne du technicien + hôtel + repas + heures × coût horaire interne
+    const ikInt = getIK(techKey), chInt = parseFloat(td.coutHoraire) || 0;
+    const crTransport = effDist * ikInt, crMo = effHeuresTrajet * chInt;
+    const crTotal = crTransport + hotel + effRepasTotal + crMo;
+    const marge = forfaitDepl - crTotal, margePctR = forfaitDepl > 0 ? marge / forfaitDepl * 100 : 0;
+    const f2 = function(x){ return x.toFixed(2).replace('.', ','); };
+    $(`${ns}-cout-reel`).innerHTML =
+      '<div class="cr-t">Coût réel du déplacement (interne, non facturé) — ' + cbAttr(td.nom || '') + '</div>' +
+      '<div class="cr-r"><span>Transport — ' + Math.round(effDist) + ' km × ' + f2(ikInt) + ' €/km (coût interne)</span><span>' + fmtE(crTransport) + '</span></div>' +
+      '<div class="cr-r"><span>Hébergement + repas</span><span>' + fmtE(hotel + effRepasTotal) + '</span></div>' +
+      (chInt > 0
+        ? '<div class="cr-r"><span>Main d\'œuvre trajet — ' + f2(effHeuresTrajet) + ' h × ' + f2(chInt) + ' €/h</span><span>' + fmtE(crMo) + '</span></div>'
+        : '<div class="cr-r"><span style="color:var(--text3)">Main d\'œuvre trajet — coût horaire interne non renseigné (Config › Équipe)</span><span>–</span></div>') +
+      '<div class="cr-r cr-tot"><span>Coût réel total</span><span>' + fmtE(crTotal) + '</span></div>' +
+      '<div class="cr-r cr-m' + (marge < 0 ? ' neg' : '') + '"><span>Marge sur le forfait déplacement</span><span>' + fmtE(marge) + ' (' + margePctR.toFixed(1).replace('.', ',') + ' %)</span></div>';
+  }
 
   if ($(`${ns}-lb-mo-interv-detail`)) $(`${ns}-lb-mo-interv-detail`).textContent = joursIntervDetail;
   if ($(`${ns}-lb-forfait-interv`))   $(`${ns}-lb-forfait-interv`).textContent   = fmtE(forfaitInterv);
