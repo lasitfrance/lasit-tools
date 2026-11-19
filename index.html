@@ -1713,6 +1713,11 @@
        BLOC — ÉQUIPE (source unique : commerciaux + techniciens)
   ══════════════════════════════════════════ -->
   <style>
+    .zone-result { margin-top:8px; padding:10px 12px; border-radius:var(--radius); background:var(--bg3); border:1px solid var(--border); font-size:12px; color:var(--text2); line-height:1.6; }
+    .zone-result b { color:var(--text); }
+    .zone-pill { display:inline-block; font:700 12px 'DM Mono',monospace; padding:1px 9px; border-radius:20px; margin:0 2px; }
+    .zone-pill.z1 { background:#EAF9F0; color:#15803D; } .zone-pill.z2 { background:#FEF9C3; color:#A16207; }
+    .zone-pill.z3 { background:#FFEDD5; color:#C2410C; } .zone-pill.hz { background:#FEE2E2; color:#B91C1C; }
     .team-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); }
     .team-row:last-child { border-bottom:none; }
     .team-av { width:30px; height:30px; border-radius:50%; background:rgba(139,92,246,.12); color:#7c3aed; display:flex; align-items:center; justify-content:center; font:700 11px 'DM Mono',monospace; flex-shrink:0; }
@@ -1854,6 +1859,18 @@
       </div>
     </div>
     <div class="cfg-block-body">
+      <div class="cfg-sub">
+        <div class="cfg-sub-title">Zones d'intervention</div>
+        <div class="cfg-sub-body">
+          <div class="field-row" style="padding-top:0;">
+            <div><div class="frl" style="font-size:12px;">Tableau des zones par département</div><div class="frh" id="cfg-zones-info">—</div></div>
+            <div class="frr" style="gap:8px;">
+              <input type="file" id="cfg-zones-file" accept=".xlsx,.xls" style="display:none;" onchange="zonesImport(this.files[0]);this.value='';">
+              <button class="ech-abtn" onclick="$('cfg-zones-file').click()">📄 Importer le fichier Zones</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="cfg-sub">
         <div class="cfg-sub-title">Tarification d&eacute;placement &amp; intervention</div>
         <div class="cfg-sub-body">
@@ -2166,6 +2183,7 @@ function buildSimulatorHTML(ns) {
   h +=       "<div class=\"dist-result\" id=\"" + n + "-dist-result\">";
   h +=         "<div class=\"spinner\" id=\"" + n + "-dist-spinner\"></div>";
   h +=         "<span id=\"" + n + "-dist-text\"></span></div>";
+  h +=       "<div class=\"zone-result\" id=\"" + n + "-zone-result\" style=\"display:none;\"></div>";
   h +=       "<div id=\"" + n + "-map\" style=\"display:none;height:220px;border-radius:var(--radius-lg);margin-top:10px;overflow:hidden;border:1px solid var(--border);\"></div></div>";
   h +=     "<div class=\"field-row\">";
   h +=       "<div><div class=\"frl\">Distance aller-retour</div><div class=\"frh\">Calcul&eacute;e auto ou saisie manuelle</div></div>";
@@ -2360,6 +2378,7 @@ function loadConfig() {
   if($('cfg-nt-cc')) $('cfg-nt-cc').value = (cfg.ntCc==null ? 'vincent.vandomme@lasitlaser.fr' : cfg.ntCc);
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-whatsapp-emanuele')) $('cfg-whatsapp-emanuele').value = (cfg.whatsappEmanuele==null ? '+39 320 249 6559' : cfg.whatsappEmanuele);
+  zonesRenderInfo();
   if($('cfg-ech-cc-comm')) $('cfg-ech-cc-comm').checked = cfg.echCcCommerciaux!==false;
   if($('cfg-email-cc')) $('cfg-email-cc').value = (cfg.emailCc!=null) ? cfg.emailCc : 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
@@ -2559,7 +2578,9 @@ function saveConfig() {
       custom:         vn('cfg-ship-custom'),
     },
     tech: teamGetTech(),
-    techOrder: teamGetTechOrder()
+    techOrder: teamGetTechOrder(),
+    zones: getCfg().zones || null,
+    zonesInfo: getCfg().zonesInfo || null
   };
   window.APP_CFG = cfg;
   refreshCfgIK();
@@ -3327,7 +3348,7 @@ function onTechChange(ns) {
   const addr = $(`${ns}-adresse`) ? $(`${ns}-adresse`).value.trim() : '';
   if (addr) {
     $(`${ns}-dist-result`).style.display = 'none';
-    calculerDistance(ns);
+    calculerDistance(ns, false);
   } else {
     $(`${ns}-dist-result`).style.display = 'none';
     calcPage(ns);
@@ -3356,7 +3377,7 @@ function resetOrigin(ns) {
   delete window._dureeTrajetAR[ns];
   const addr = $(`${ns}-adresse`) ? $(`${ns}-adresse`).value.trim() : '';
   if (addr) {
-    calculerDistance(ns);
+    calculerDistance(ns, false);
   } else {
     calcPage(ns);
   }
@@ -3623,18 +3644,129 @@ async function routeInfo(fLat,fLon,tLat,tLon) {
 }
 window._dureeTrajetAR = {}; // { ns: heures AR } — durée réelle de trajet récupérée via l'API d'itinéraire
 
-async function calculerDistance(ns) {
+
+// ══════════════════════════════════════════════
+//  ZONES D'INTERVENTION + TECHNICIEN LE PLUS PROCHE (Maintenance)
+// ══════════════════════════════════════════════
+var ZONES_DEFAULT = {"01":["Ain","Z1","Lyon"],"02":["Aisne","Z2","Laval"],"03":["Allier","Z1","Lyon"],"04":["Alpes-de-Haute-Provence","Z2","Lyon"],"05":["Hautes-Alpes","Z2","Lyon"],"06":["Alpes-Maritimes","Z3","Lyon"],"07":["Ardèche","Z1","Lyon"],"08":["Ardennes","Z3","Laval"],"09":["Ariège","Z3","Lyon"],"10":["Aube","Z2","Lyon"],"11":["Aude","Z3","Lyon"],"12":["Aveyron","Z2","Lyon"],"13":["Bouches-du-Rhône","Z2","Lyon"],"14":["Calvados","Z1","Laval"],"15":["Cantal","Z2","Lyon"],"16":["Charente","Z2","Laval"],"17":["Charente-Maritime","Z2","Laval"],"18":["Cher","Z2","Lyon"],"19":["Corrèze","Z2","Lyon"],"2A":["Corse-du-Sud","Hors zone","Lyon"],"2B":["Haute-Corse","Hors zone","Lyon"],"21":["Côte-d'Or","Z1","Lyon"],"22":["Côtes-d'Armor","Z1","Laval"],"23":["Creuse","Z2","Lyon"],"24":["Dordogne","Z2","Laval"],"25":["Doubs","Z1","Lyon"],"26":["Drôme","Z1","Lyon"],"27":["Eure","Z1","Laval"],"28":["Eure-et-Loir","Z1","Laval"],"29":["Finistère","Z2","Laval"],"30":["Gard","Z2","Lyon"],"31":["Haute-Garonne","Z3","Lyon"],"32":["Gers","Z3","Lyon"],"33":["Gironde","Z3","Laval"],"34":["Hérault","Z2","Lyon"],"35":["Ille-et-Vilaine","Z1","Laval"],"36":["Indre","Z2","Laval"],"37":["Indre-et-Loire","Z1","Laval"],"38":["Isère","Z1","Lyon"],"39":["Jura","Z1","Lyon"],"40":["Landes","Z3","Laval"],"41":["Loir-et-Cher","Z1","Laval"],"42":["Loire","Z1","Lyon"],"43":["Haute-Loire","Z1","Lyon"],"44":["Loire-Atlantique","Z1","Laval"],"45":["Loiret","Z1","Laval"],"46":["Lot","Z3","Lyon"],"47":["Lot-et-Garonne","Z3","Laval"],"48":["Lozère","Z2","Lyon"],"49":["Maine-et-Loire","Z1","Laval"],"50":["Manche","Z1","Laval"],"51":["Marne","Z2","Lyon"],"52":["Haute-Marne","Z2","Lyon"],"53":["Mayenne","Z1","Laval"],"54":["Meurthe-et-Moselle","Z3","Lyon"],"55":["Meuse","Z3","Lyon"],"56":["Morbihan","Z1","Laval"],"57":["Moselle","Z3","Lyon"],"58":["Nièvre","Z1","Lyon"],"59":["Nord","Z3","Laval"],"60":["Oise","Z2","Laval"],"61":["Orne","Z1","Laval"],"62":["Pas-de-Calais","Z3","Laval"],"63":["Puy-de-Dôme","Z1","Lyon"],"64":["Pyrénées-Atlantiques","Z3","Laval"],"65":["Hautes-Pyrénées","Z3","Lyon"],"66":["Pyrénées-Orientales","Z3","Lyon"],"67":["Bas-Rhin","Z3","Lyon"],"68":["Haut-Rhin","Z2","Lyon"],"69":["Rhône","Z1","Lyon"],"70":["Haute-Saône","Z2","Lyon"],"71":["Saône-et-Loire","Z1","Lyon"],"72":["Sarthe","Z1","Laval"],"73":["Savoie","Z1","Lyon"],"74":["Haute-Savoie","Z1","Lyon"],"75":["Paris","Z2","Laval"],"76":["Seine-Maritime","Z2","Laval"],"77":["Seine-et-Marne","Z2","Laval"],"78":["Yvelines","Z2","Laval"],"79":["Deux-Sèvres","Z2","Laval"],"80":["Somme","Z2","Laval"],"81":["Tarn","Z3","Lyon"],"82":["Tarn-et-Garonne","Z3","Lyon"],"83":["Var","Z3","Lyon"],"84":["Vaucluse","Z1","Lyon"],"85":["Vendée","Z1","Laval"],"86":["Vienne","Z1","Laval"],"87":["Haute-Vienne","Z2","Laval"],"88":["Vosges","Z2","Lyon"],"89":["Yonne","Z2","Lyon"],"90":["Territoire de Belfort","Z2","Lyon"],"91":["Essonne","Z2","Laval"],"92":["Hauts-de-Seine","Z2","Laval"],"93":["Seine-Saint-Denis","Z2","Laval"],"94":["Val-de-Marne","Z2","Laval"],"95":["Val-d'Oise","Z2","Laval"],"971":["Guadeloupe","Hors zone","Laval"],"972":["Martinique","Hors zone","Laval"],"973":["Guyane","Hors zone","Laval"],"974":["La Réunion","Hors zone","Laval"],"976":["Mayotte","Hors zone","Laval"]};
+function getZones(){ var z=getCfg().zones; return (z && Object.keys(z).length) ? z : ZONES_DEFAULT; }
+function zonesRenderInfo(){
+  var el=$('cfg-zones-info'); if(!el) return;
+  var z=getZones(), n=Object.keys(z).length, inf=getCfg().zonesInfo;
+  var cnt={}; Object.keys(z).forEach(function(k){ var zz=z[k][1]; cnt[zz]=(cnt[zz]||0)+1; });
+  el.textContent = n+' départements ('+Object.keys(cnt).sort().map(function(k){return k+' : '+cnt[k];}).join(' · ')+') — '+
+    (inf ? 'fichier « '+inf.file+' » importé le '+new Date(inf.at).toLocaleDateString('fr-FR') : 'tableau d\'origine');
+}
+function zonesImport(f){
+  if(!f) return;
+  if(typeof XLSX==='undefined'){ alert('Lecture Excel indisponible — rechargez la page.'); return; }
+  var r=new FileReader();
+  r.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+      var hi=-1; for(var i=0;i<Math.min(rows.length,20);i++){ if(rows[i].some(function(c){return /^zone$/i.test(String(c).trim());})){ hi=i; break; } }
+      if(hi<0) throw new Error('colonne « Zone » introuvable');
+      var h=rows[hi].map(function(c){return String(c).trim().toLowerCase();});
+      var ic=h.findIndex(function(c){return /^code/.test(c);}), idp=h.findIndex(function(c){return /^d[ée]partement/.test(c);}),
+          iz=h.indexOf('zone'), ib=h.findIndex(function(c){return /^base/.test(c);});
+      if(ic<0) throw new Error('colonne « Code » introuvable');
+      var z={};
+      rows.slice(hi+1).forEach(function(r){
+        var c=String(r[ic]||'').trim().toUpperCase(); if(!c) return;
+        if(/^\d$/.test(c)) c='0'+c;
+        z[c]=[String(r[idp]||'').trim(), String(r[iz]||'').trim(), ib>=0?String(r[ib]||'').trim():''];
+      });
+      if(Object.keys(z).length<50) throw new Error('seulement '+Object.keys(z).length+' lignes lues');
+      window.APP_CFG.zones=z; window.APP_CFG.zonesInfo={file:f.name, at:Date.now()};
+      saveConfig(); zonesRenderInfo();
+      alert('✓ '+Object.keys(z).length+' départements importés.\n\nPensez à « Sauvegarder dans le cloud » pour les partager.');
+    }catch(err){ alert('Fichier non reconnu : '+err.message); }
+  };
+  r.readAsArrayBuffer(f);
+}
+// Géocodage avec détails (code postal + pays)
+async function geocodeDetail(addr){
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(addr)}&limit=1&countrycodes=fr,be,ch,lu,de,es,it,gb,mc`, {
+    headers: { 'Accept-Language': 'fr', 'User-Agent': 'LASIT-LASER-France-Calculator/1.0' }
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  if (!d.length) throw new Error('Adresse introuvable : ' + addr);
+  const a = d[0].address || {};
+  return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon), postcode: String(a.postcode||'').trim(), country: String(a.country_code||'').toLowerCase(), countryName: a.country||'' };
+}
+var _baseGeoCache={};
+function geocodeBase(addr){
+  var k=String(addr||'').trim().toLowerCase();
+  if(!_baseGeoCache[k]) _baseGeoCache[k]=geocode(addr).catch(function(e){ delete _baseGeoCache[k]; throw e; });
+  return _baseGeoCache[k];
+}
+function deptFromPostcode(pc){
+  pc=String(pc||'').replace(/\s/g,''); if(!/^\d{5}$/.test(pc)) return '';
+  if(pc.slice(0,2)==='97' || pc.slice(0,2)==='98') return pc.slice(0,3);
+  if(pc.slice(0,2)==='20') return (parseInt(pc,10)<20200) ? '2A' : '2B';
+  return pc.slice(0,2);
+}
+function zoneOf(dst){
+  if(dst.country && dst.country!=='fr') return { zone:'Hors zone', label:(dst.countryName||dst.country.toUpperCase()), code:'' };
+  var code=deptFromPostcode(dst.postcode), z=getZones()[code];
+  if(!z) return { zone:'?', label: code ? 'Département '+code : 'Code postal introuvable', code:code };
+  return { zone:z[1]||'?', label:z[0]+' ('+code+')', base:z[2], code:code };
+}
+function fmtH(h){ var m=Math.round(h*60); return m<60 ? m+' min' : Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'); }
+function setTechSelect(ns, key){
+  var sel=$(`${ns}-technicien`); if(!sel || sel.value===key) return;
+  sel.value=key;
+  var meta=getTechMeta()[key]||{nom:'?',initiales:'?',role:'Technicien'};
+  $(`${ns}-tech-name`).textContent=meta.nom; $(`${ns}-tech-role`).textContent=meta.role;
+  var av=$(`${ns}-tech-avatar`); av.textContent=meta.initiales; av.className=meta.pending?'tech-avatar pending':'tech-avatar';
+  if(!originManuelle[ns] && $(`${ns}-origin-input`)) $(`${ns}-origin-input`).value=getTechBase(key);
+}
+window._zoneInfo = {};
+function renderZone(ns){
+  var el=$(`${ns}-zone-result`), zi=window._zoneInfo[ns]; if(!el) return;
+  if(!zi){ el.style.display='none'; return; }
+  var z=zi.zone, cls = /^z1$/i.test(z)?'z1':/^z2$/i.test(z)?'z2':/^z3$/i.test(z)?'z3':'hz';
+  var h='📍 <b>'+cbAttr(zi.label)+'</b> · Zone <span class="zone-pill '+cls+'">'+cbAttr(z)+'</span>'+(zi.base?' <span style="color:var(--text3)">· base de référence '+cbAttr(zi.base)+'</span>':'');
+  if(zi.ranking && zi.ranking.length){
+    var best=zi.ranking[0], cur=$(`${ns}-technicien`) ? $(`${ns}-technicien`).value : '';
+    h+='<br>🚐 Technicien le plus proche : <b>'+cbAttr(best.nom)+'</b> — '+fmtH(best.hours)+' de route'+
+      (zi.ranking.length>1 ? ' <span style="color:var(--text3)">('+zi.ranking.slice(1).map(function(r){return cbAttr(r.nom)+' : '+fmtH(r.hours);}).join(' · ')+')</span>' : '');
+    if(cur && cur!==best.key){ var m=getTechMeta()[cur]; h+='<br><span style="color:var(--red)">↳ Choix manuel : '+cbAttr(m?m.nom:cur)+'</span>'; }
+  }
+  el.innerHTML=h; el.style.display='block';
+}
+
+async function calculerDistance(ns, auto) {
   const addr = $(`${ns}-adresse`).value.trim();
   if (!addr) return;
-  const key  = $(`${ns}-technicien`).value;
-  const base = ($(`${ns}-origin-input`) && $(`${ns}-origin-input`).value.trim()) || getTechBase(key);
+  if (auto===undefined) auto = true; // saisie d'adresse : choix automatique du technicien le plus proche
   const btn=$(`${ns}-addr-btn`), res=$(`${ns}-dist-result`);
   btn.disabled=true;
   res.style.display='flex'; res.className='dist-result loading';
   $(`${ns}-dist-spinner`).style.display='block';
   $(`${ns}-dist-text`).textContent="Géocodage des adresses...";
   try {
-    const [ori,dst] = await Promise.all([geocode(base), geocode(addr)]);
+    window._zoneInfo[ns] = null;
+    const dst = await geocodeDetail(addr);
+    // Zone d'intervention (affichage seulement)
+    const zi = zoneOf(dst); window._zoneInfo[ns] = zi;
+    // Comparaison des temps de trajet de chaque technicien (si l'adresse a changé ou en mode auto)
+    if (auto || !zi.ranking) {
+      $(`${ns}-dist-text`).textContent="Comparaison des techniciens...";
+      const ids = getTechIds().filter(function(id){ const m=getTechMeta()[id]; return m && !m.pending; });
+      const rk = (await Promise.all(ids.map(async function(id){
+        try { const o = await geocodeBase(getTechBase(id)); const r = await routeInfo(o.lat,o.lon,dst.lat,dst.lon);
+              return { key:id, nom:getTechMeta()[id].nom, hours:r.hours, km:r.km }; } catch(e){ return null; }
+      }))).filter(Boolean).sort(function(a,b){ return a.hours-b.hours; });
+      zi.ranking = rk;
+      if (auto && rk.length && !originManuelle[ns]) setTechSelect(ns, rk[0].key);
+    }
+    renderZone(ns);
+    const key  = $(`${ns}-technicien`).value;
+    const base = ($(`${ns}-origin-input`) && $(`${ns}-origin-input`).value.trim()) || getTechBase(key);
+    const ori = await geocodeBase(base);
     $(`${ns}-dist-text`).textContent="Calcul de l'itinéraire...";
     const info = await routeInfo(ori.lat,ori.lon,dst.lat,dst.lon);
     const km = info.km;
@@ -3656,7 +3788,8 @@ async function calculerDistance(ns) {
   } catch {
     res.className='dist-result err';
     $(`${ns}-dist-spinner`).style.display='none';
-    $(`${ns}-dist-text`).textContent='✕  Adresse non trouvée — saisissez manuellement';
+    $(`${ns}-dist-text`).textContent = window._zoneInfo[ns] ? '✕  Itinéraire routier introuvable — saisissez la distance manuellement' : '✕  Adresse non trouvée — saisissez manuellement';
+    renderZone(ns);
   }
   btn.disabled=false;
 }
