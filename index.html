@@ -207,6 +207,14 @@
     .total-row.main { background:var(--bg3); padding:18px 22px; }
     .total-row.main .trl { font-size:15px; font-weight:600; color:var(--text); }
     .total-row.main .trv { font-size:26px; font-weight:600; color:var(--accent); }
+    .fd-wrap { display:flex; align-items:center; gap:6px; }
+    .fd-in { width:190px; text-align:right; font:600 26px 'DM Mono',monospace; color:var(--accent); background:transparent; border:1px dashed transparent; border-radius:8px; padding:2px 6px; outline:none; cursor:text; }
+    .fd-in:hover { border-color:var(--border2); background:var(--bg2); }
+    .fd-in:focus { border-color:var(--accent); background:var(--bg2); }
+    .fd-in.manual, .fd-in.manual + .fd-eur { color:#C2410C; }
+    .fd-eur { font:600 26px 'DM Mono',monospace; color:var(--accent); }
+    .fd-reset { background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; padding:2px 4px; }
+    .fd-note { padding:6px 22px 10px; font:12px 'DM Mono',monospace; color:#C2410C; background:rgba(15,158,213,.08); text-align:right; margin-top:-1px; }
 
     /* ── CONFIG ── */
     main.cfg-main { max-width:960px; }
@@ -2253,7 +2261,8 @@ function buildSimulatorHTML(ns) {
   +          " <span id=\"" + n + "-auto-repas\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
   +        "</span><span class=\"trv\" id=\"" + n + "-lb-repas\">&ndash;</span></div>";
 
-  h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait d&eacute;placement HT</span><span class=\"trv\" id=\"" + n + "-lb-forfait-depl\">&ndash;</span></div>";
+  h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait d&eacute;placement HT</span><span class=\"trv fd-wrap\"><button class=\"fd-reset\" id=\"" + n + "-fd-reset\" title=\"Revenir au forfait calcul&eacute;\" onclick=\"resetForfaitDepl(&apos;" + n + "&apos;)\" style=\"display:none;\">&#8634;</button><input type=\"text\" class=\"fd-in\" id=\"" + n + "-in-forfait-depl\" title=\"Modifiable : saisissez un montant pour ajuster le forfait\" onfocus=\"this.select()\" onkeydown=\"if(event.key===&apos;Enter&apos;)this.blur()\" onchange=\"onForfaitDeplManual(&apos;" + n + "&apos;,this.value)\"><span class=\"fd-eur\">&euro;</span></span></div>";
+  h +=     "<div class=\"fd-note\" id=\"" + n + "-fd-note\" style=\"display:none;\"></div>";
   h +=     "<div class=\"cr-block\" id=\"" + n + "-cout-reel\"></div>";
 
   // ── FORFAIT INTERVENTION ──
@@ -3447,6 +3456,17 @@ function getSeuilNuit()   { return vn('cfg-seuil')        || 350; }
 function getSeuilTrajet() { return vn('cfg-seuil-trajet') || 200; }
 
 function onDistChange(ns) { nuitsManuelles[ns]=false; delete window._dureeTrajetAR[ns]; calcPage(ns); }
+function onForfaitDeplManual(ns, v) {
+  const n = parseFloat(String(v).replace(/[\s\u00a0\u202f€]/g,'').replace(',','.'));
+  syntheseManuelle[ns] = syntheseManuelle[ns] || {};
+  if (!isFinite(n) || n < 0) { delete syntheseManuelle[ns].forfaitDepl; }
+  else { syntheseManuelle[ns].forfaitDepl = true; syntheseManuelle[ns].forfaitDeplVal = Math.round(n*100)/100; }
+  calcPage(ns);
+}
+function resetForfaitDepl(ns) {
+  if (syntheseManuelle[ns]) { delete syntheseManuelle[ns].forfaitDepl; delete syntheseManuelle[ns].forfaitDeplVal; }
+  calcPage(ns);
+}
 function recalcNuits(ns)  { nuitsManuelles[ns]=false; syntheseManuelle[ns]={}; calcPage(ns); }
 function onNuitsManual(ns){ nuitsManuelles[ns]=true;  calcPage(ns); }
 
@@ -3565,6 +3585,8 @@ function calcPage(ns) {
     // Forfait déplacement : transport (coût km déjà au prix de vente) + hôtel + repas + MO trajet
     sousTotalDepl = transport + hotel + effRepasTotal;
     forfaitDepl   = sousTotalDepl + moTrajetSale;
+    var forfaitDeplCalc = forfaitDepl;
+    if (sm.forfaitDepl && isFinite(sm.forfaitDeplVal) && sm.forfaitDeplVal >= 0) forfaitDepl = sm.forfaitDeplVal; // ajustement manuel
 
     // Forfait intervention : empilement de forfaits fixes 1j / 0,5j (prix de vente direct)
     const fullDays = Math.floor(effJoursInterv + 1e-9);
@@ -3610,7 +3632,20 @@ function calcPage(ns) {
   $(`${ns}-lb-hotel`).textContent      = fmtE(hotel);
   if ($(`${ns}-lb-repas`)) $(`${ns}-lb-repas`).textContent = fmtE(effRepasTotal);
   if ($(`${ns}-lb-soustotal-depl`)) $(`${ns}-lb-soustotal-depl`).textContent = fmtE(sousTotalDepl);
-  if ($(`${ns}-lb-forfait-depl`))   $(`${ns}-lb-forfait-depl`).textContent   = fmtE(forfaitDepl);
+  if ($(`${ns}-in-forfait-depl`)) {
+    const fin = $(`${ns}-in-forfait-depl`), man = !!(sm.forfaitDepl && ns==='maint');
+    if (document.activeElement !== fin) fin.value = fmtE(forfaitDepl).replace(/\s*€\s*$/,'');
+    fin.classList.toggle('manual', man);
+    if ($(`${ns}-fd-reset`)) $(`${ns}-fd-reset`).style.display = man ? '' : 'none';
+    const note = $(`${ns}-fd-note`);
+    if (note) {
+      if (man && typeof forfaitDeplCalc !== 'undefined') {
+        const d = forfaitDepl - forfaitDeplCalc, pc = forfaitDeplCalc > 0 ? d / forfaitDeplCalc * 100 : 0;
+        note.textContent = 'Ajusté manuellement — calculé : ' + fmtE(forfaitDeplCalc) + ' · ' + (d<0?'remise ':'majoration ') + fmtE(Math.abs(d)) + ' (' + (d<0?'−':'+') + Math.abs(pc).toFixed(1).replace('.',',') + ' %)';
+        note.style.display = 'block';
+      } else note.style.display = 'none';
+    }
+  }
   if ($(`${ns}-cout-reel`)) {
     // Coût réel (interne, non facturé) : km × coût interne du technicien + hôtel + repas + heures × coût horaire interne
     const ikInt = getIK(techKey), chInt = getCoutHoraireCharge(techKey);
