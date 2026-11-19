@@ -3131,7 +3131,7 @@ function refreshCfgIK() {
   getTechIds().forEach(function(key){
     var td = getTechData(key);
     var pc = vn('cfg-prix-carb') || 1.68;
-    var ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages + (parseFloat(td.autresVeh)||0)) / td.kman;
+    var ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages) / td.kman;
     if ($('team-ik-'+key))   $('team-ik-'+key).textContent   = isFinite(ik) ? ik.toFixed(2) + ' €/km' : '–';
     var ch = getCoutHoraireCharge(key);
     if ($('team-ch-'+key)) $('team-ch-'+key).textContent = ch>0 ? ch.toFixed(2).replace('.',',') + ' €/h (+' + getMajSalarie() + ' %)' : 'renseigner le coût horaire';
@@ -3238,7 +3238,6 @@ function teamGetTech(){
       leasing:teamNum(t.leasing,d.leasing),
       peages:(isFinite(parseFloat(t.peages)) ? parseFloat(t.peages) : d.peages), kman:teamNum(t.kman,d.kman),
       coutHoraire:(isFinite(parseFloat(t.coutHoraire)) && parseFloat(t.coutHoraire)>0 ? parseFloat(t.coutHoraire) : 0),
-      autresVeh:(isFinite(parseFloat(t.autresVeh)) && parseFloat(t.autresVeh)>0 ? parseFloat(t.autresVeh) : 0),
       base:String(t.base||'').trim() || d.base };
   });
   return out;
@@ -3255,7 +3254,7 @@ function teamRender(){
   var tl=$('team-tech-list');
   if (tl) tl.innerHTML = TEAM.techOrder.map(function(id,i){
     var t=TEAM.tech[id], nom=String(t.nom||'').trim(), pend=(!nom||nom==='À venir');
-    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f]==null||((f==='coutHoraire'||f==='autresVeh')&&!+t[f])?'':t[f])+'" placeholder="–" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
+    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f]==null||(f==='coutHoraire'&&!+t[f])?'':t[f])+'" placeholder="–" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
     return '<div class="tcc-card">'+
       '<div class="tcc-header">'+
         '<div class="tcc-av'+(pend?' pending':'')+'" id="team-tav-'+id+'">'+(pend?'?':cbAttr(techInitiales(nom)))+'</div>'+
@@ -3269,7 +3268,6 @@ function teamRender(){
         '<div class="tcc-sec">🚐 Véhicule <span>→ transport</span></div>'+
         num('leasing','Leasing mensuel','€/mois',10)+
         num('peages','Péages annuels','€/an',100)+
-        num('autresVeh','Assurance, entretien, pneus','€/an',100)+
         num('kman','Kilométrage annuel','km/an',1000)+
         '<div class="tcc-row tcc-res"><span class="tcc-lbl">Coût interne €/km (calculé)</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
         '<div class="tcc-sec">👤 Salarié <span>→ main d\'œuvre</span></div>'+
@@ -3321,7 +3319,7 @@ function getTechBase(key) { return getTechData(key).base || 'Limonest, 69760'; }
 function getIK(key) {
   const t = getTechData(key);
   const pc = vn('cfg-prix-carb') || 1.68;
-  return (t.leasing*12 + (t.kman/100)*CONSO*pc + t.peages + (parseFloat(t.autresVeh)||0)) / t.kman;
+  return (t.leasing*12 + (t.kman/100)*CONSO*pc + t.peages) / t.kman;
 }
 function getMajSalarie(){ var v=$('cfg-maj-salarie') ? parseFloat($('cfg-maj-salarie').value) : getCfg().majSalarie; return isFinite(v) ? v : 12; }
 function getCoutHoraireCharge(key){ var b=parseFloat(getTechData(key).coutHoraire)||0; return b>0 ? b*(1+getMajSalarie()/100) : 0; }
