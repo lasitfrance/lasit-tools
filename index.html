@@ -274,6 +274,9 @@
     .tcc-num { background:var(--bg); border:1px solid var(--border2); border-radius:4px; color:var(--text); font-family:DM Mono,monospace; font-size:12px; padding:3px 8px; width:88px; text-align:right; outline:none; }
     .tcc-num:focus { border-color:var(--accent); }
     .tcc-ik { font-family:DM Mono,monospace; font-size:13px; color:var(--accent); font-weight:500; }
+    .tcc-sec { font:700 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); margin:14px 0 2px; padding-bottom:4px; border-bottom:2px solid var(--border); }
+    .tcc-sec span { color:var(--text3); font-weight:400; text-transform:none; letter-spacing:0; margin-left:4px; }
+    .tcc-row.tcc-res { border-bottom:none; background:var(--bg3); margin:4px -8px 0; padding:7px 8px; border-radius:6px; }
     .tcc-divider { border-top:1px solid var(--border); margin:6px 0 2px; padding-top:8px; }
     .cfg-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .input-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
@@ -1760,6 +1763,10 @@
         <div class="cfg-sub-title">Techniciens</div>
         <div class="cfg-sub-body">
           <div class="team-note">Utilisés par les calculateurs Maintenance et Prix Machine (base de départ et coûts) et par le Carnet de bord.</div>
+          <div class="field-row" style="padding:4px 0 12px;">
+            <div><div class="frl" style="font-size:12px;">Majoration coûts annexes salarié</div><div class="frh">Mutuelle, primes de fin d'année, formation, outillage, téléphone… ajoutée au coût horaire du bulletin</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-maj-salarie" value="12" min="0" max="100" step="1" oninput="saveConfig();refreshCfgIK();"><span class="fru">%</span></div>
+          </div>
           <div class="tcc-grid" id="team-tech-list"></div>
           <button class="team-add" onclick="teamAddTech()">+ Ajouter un technicien</button>
         </div>
@@ -2385,6 +2392,7 @@ function loadConfig() {
   if($('cfg-email-emanuele')) $('cfg-email-emanuele').value = cfg.emailEmanuele || 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-whatsapp-emanuele')) $('cfg-whatsapp-emanuele').value = (cfg.whatsappEmanuele==null ? '+39 320 249 6559' : cfg.whatsappEmanuele);
   zonesRenderInfo();
+  if($('cfg-maj-salarie')) $('cfg-maj-salarie').value = (cfg.majSalarie==null ? 12 : cfg.majSalarie);
   if($('cfg-ech-cc-comm')) $('cfg-ech-cc-comm').checked = cfg.echCcCommerciaux!==false;
   if($('cfg-email-cc')) $('cfg-email-cc').value = (cfg.emailCc!=null) ? cfg.emailCc : 'vincent.vandomme@lasitlaser.fr';
   if($('cfg-carnet-debut')) $('cfg-carnet-debut').value = cfg.carnetDebut || '2026-11-02';
@@ -2585,6 +2593,7 @@ function saveConfig() {
     },
     tech: teamGetTech(),
     techOrder: teamGetTechOrder(),
+    majSalarie: $('cfg-maj-salarie') ? (parseFloat($('cfg-maj-salarie').value)||0) : (getCfg().majSalarie==null ? 12 : getCfg().majSalarie),
     zones: getCfg().zones || null,
     zonesInfo: getCfg().zonesInfo || null
   };
@@ -3122,8 +3131,10 @@ function refreshCfgIK() {
   getTechIds().forEach(function(key){
     var td = getTechData(key);
     var pc = vn('cfg-prix-carb') || 1.68;
-    var ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages) / td.kman;
+    var ik = (td.leasing*12 + (td.kman/100)*CONSO*pc + td.peages + (parseFloat(td.autresVeh)||0)) / td.kman;
     if ($('team-ik-'+key))   $('team-ik-'+key).textContent   = isFinite(ik) ? ik.toFixed(2) + ' €/km' : '–';
+    var ch = getCoutHoraireCharge(key);
+    if ($('team-ch-'+key)) $('team-ch-'+key).textContent = ch>0 ? ch.toFixed(2).replace('.',',') + ' €/h (+' + getMajSalarie() + ' %)' : 'renseigner le coût horaire';
   });
 }
 
@@ -3227,6 +3238,7 @@ function teamGetTech(){
       leasing:teamNum(t.leasing,d.leasing),
       peages:(isFinite(parseFloat(t.peages)) ? parseFloat(t.peages) : d.peages), kman:teamNum(t.kman,d.kman),
       coutHoraire:(isFinite(parseFloat(t.coutHoraire)) && parseFloat(t.coutHoraire)>0 ? parseFloat(t.coutHoraire) : 0),
+      autresVeh:(isFinite(parseFloat(t.autresVeh)) && parseFloat(t.autresVeh)>0 ? parseFloat(t.autresVeh) : 0),
       base:String(t.base||'').trim() || d.base };
   });
   return out;
@@ -3243,7 +3255,7 @@ function teamRender(){
   var tl=$('team-tech-list');
   if (tl) tl.innerHTML = TEAM.techOrder.map(function(id,i){
     var t=TEAM.tech[id], nom=String(t.nom||'').trim(), pend=(!nom||nom==='À venir');
-    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f]==null||(f==='coutHoraire'&&!+t[f])?'':t[f])+'" placeholder="–" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
+    var num=function(f,lbl,unit,step){ return '<div class="tcc-row"><span class="tcc-lbl">'+lbl+'</span><div class="tcc-right"><input type="number" class="tcc-num" value="'+cbAttr(t[f]==null||((f==='coutHoraire'||f==='autresVeh')&&!+t[f])?'':t[f])+'" placeholder="–" step="'+step+'" oninput="teamSetTech(\''+id+'\',\''+f+'\',this.value)"><span class="tcc-unit">'+unit+'</span></div></div>'; };
     return '<div class="tcc-card">'+
       '<div class="tcc-header">'+
         '<div class="tcc-av'+(pend?' pending':'')+'" id="team-tav-'+id+'">'+(pend?'?':cbAttr(techInitiales(nom)))+'</div>'+
@@ -3254,12 +3266,15 @@ function teamRender(){
       '<div class="tcc-body">'+
         '<div class="tcc-row" style="align-items:flex-start;"><span class="tcc-lbl" style="padding-top:4px;">Base (départ)</span>'+
           '<input type="text" class="tcc-num" value="'+cbAttr(t.base)+'" placeholder="Adresse de départ" style="flex:1;margin-left:12px;text-align:left;font-size:11px;padding:4px 8px;" oninput="teamSetTech(\''+id+'\',\'base\',this.value)"></div>'+
+        '<div class="tcc-sec">🚐 Véhicule <span>→ transport</span></div>'+
         num('leasing','Leasing mensuel','€/mois',10)+
         num('peages','Péages annuels','€/an',100)+
+        num('autresVeh','Assurance, entretien, pneus','€/an',100)+
         num('kman','Kilométrage annuel','km/an',1000)+
-        num('coutHoraire','Coût horaire interne (chargé)','€/h',1)+
-        '<div class="tcc-divider"></div>'+
-        '<div class="tcc-row"><span class="tcc-lbl" style="color:var(--text3)">Coût interne €/km (calculé)</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
+        '<div class="tcc-row tcc-res"><span class="tcc-lbl">Coût interne €/km (calculé)</span><span class="tcc-ik" id="team-ik-'+id+'">–</span></div>'+
+        '<div class="tcc-sec">👤 Salarié <span>→ main d\'œuvre</span></div>'+
+        num('coutHoraire','Coût horaire (bulletin de paie)','€/h',1)+
+        '<div class="tcc-row tcc-res"><span class="tcc-lbl">Coût horaire chargé (calculé)</span><span class="tcc-ik" id="team-ch-'+id+'">–</span></div>'+
       '</div></div>';
   }).join('');
   refreshCfgIK();
@@ -3284,6 +3299,7 @@ function teamDelComm(i){
 }
 function teamSetTech(id,f,v){
   TEAM.tech[id][f]=v;
+  if (f!=='nom' && f!=='base') { setTimeout(refreshCfgIK,0); }
   if (f==='nom'){ var av=$('team-tav-'+id), nom=String(v||'').trim(), pend=(!nom||nom==='À venir'); if (av){ av.textContent=pend?'?':techInitiales(nom); av.className='tcc-av'+(pend?' pending':''); } }
   saveConfig();
 }
@@ -3305,8 +3321,10 @@ function getTechBase(key) { return getTechData(key).base || 'Limonest, 69760'; }
 function getIK(key) {
   const t = getTechData(key);
   const pc = vn('cfg-prix-carb') || 1.68;
-  return (t.leasing*12 + (t.kman/100)*CONSO*pc + t.peages) / t.kman;
+  return (t.leasing*12 + (t.kman/100)*CONSO*pc + t.peages + (parseFloat(t.autresVeh)||0)) / t.kman;
 }
+function getMajSalarie(){ var v=$('cfg-maj-salarie') ? parseFloat($('cfg-maj-salarie').value) : getCfg().majSalarie; return isFinite(v) ? v : 12; }
+function getCoutHoraireCharge(key){ var b=parseFloat(getTechData(key).coutHoraire)||0; return b>0 ? b*(1+getMajSalarie()/100) : 0; }
 
 // ══════════════════════════════════════════════
 //  TECHNICIEN (par page)
@@ -3597,7 +3615,7 @@ function calcPage(ns) {
   if ($(`${ns}-lb-forfait-depl`))   $(`${ns}-lb-forfait-depl`).textContent   = fmtE(forfaitDepl);
   if ($(`${ns}-cout-reel`)) {
     // Coût réel (interne, non facturé) : km × coût interne du technicien + hôtel + repas + heures × coût horaire interne
-    const ikInt = getIK(techKey), chInt = parseFloat(td.coutHoraire) || 0;
+    const ikInt = getIK(techKey), chInt = getCoutHoraireCharge(techKey);
     const crTransport = effDist * ikInt, crMo = effHeuresTrajet * chInt;
     const crTotal = crTransport + hotel + effRepasTotal + crMo;
     const marge = forfaitDepl - crTotal, margePctR = forfaitDepl > 0 ? marge / forfaitDepl * 100 : 0;
@@ -3607,7 +3625,7 @@ function calcPage(ns) {
       '<div class="cr-r"><span>Transport — ' + Math.round(effDist) + ' km × ' + f2(ikInt) + ' €/km (coût interne)</span><span>' + fmtE(crTransport) + '</span></div>' +
       '<div class="cr-r"><span>Hébergement + repas</span><span>' + fmtE(hotel + effRepasTotal) + '</span></div>' +
       (chInt > 0
-        ? '<div class="cr-r"><span>Main d\'œuvre trajet — ' + f2(effHeuresTrajet) + ' h × ' + f2(chInt) + ' €/h</span><span>' + fmtE(crMo) + '</span></div>'
+        ? '<div class="cr-r"><span>Main d\'œuvre trajet — ' + f2(effHeuresTrajet) + ' h × ' + f2(chInt) + ' €/h (chargé)</span><span>' + fmtE(crMo) + '</span></div>'
         : '<div class="cr-r"><span style="color:var(--text3)">Main d\'œuvre trajet — coût horaire interne non renseigné (Config › Équipe)</span><span>–</span></div>') +
       '<div class="cr-r cr-tot"><span>Coût réel total</span><span>' + fmtE(crTotal) + '</span></div>' +
       '<div class="cr-r cr-m' + (marge < 0 ? ' neg' : '') + '"><span>Marge sur le forfait déplacement</span><span>' + fmtE(marge) + ' (' + margePctR.toFixed(1).replace('.', ',') + ' %)</span></div>';
