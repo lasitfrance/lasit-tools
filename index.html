@@ -3694,7 +3694,11 @@ async function geocodeDetail(addr){
   const d = await r.json();
   if (!d.length) throw new Error('Adresse introuvable : ' + addr);
   const a = d[0].address || {};
-  return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon), postcode: String(a.postcode||'').trim(), country: String(a.country_code||'').toLowerCase(), countryName: a.country||'' };
+  // Code département officiel (ex. « FR-35 ») quand le code postal manque (ville seule)
+  var iso = String(a['ISO3166-2-lvl6']||a['ISO3166-2-lvl5']||'')+' '+String(a['ISO3166-2-lvl4']||'');
+  var m = iso.match(/FR-(2A|2B|97\d|\d{2})\b/i);
+  return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon), postcode: String(a.postcode||'').trim(), country: String(a.country_code||'').toLowerCase(), countryName: a.country||'',
+           dept: m ? m[1].toUpperCase() : '', county: a.county||a.state_district||'' };
 }
 var _baseGeoCache={};
 function geocodeBase(addr){
@@ -3710,8 +3714,11 @@ function deptFromPostcode(pc){
 }
 function zoneOf(dst){
   if(dst.country && dst.country!=='fr') return { zone:'Hors zone', label:(dst.countryName||dst.country.toUpperCase()), code:'' };
-  var code=deptFromPostcode(dst.postcode), z=getZones()[code];
-  if(!z) return { zone:'?', label: code ? 'Département '+code : 'Code postal introuvable', code:code };
+  var zones=getZones(), code=deptFromPostcode(dst.postcode) || dst.dept || '';
+  if(!code && dst.county){ var norm=function(x){ return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z]/g,''); };
+    var cn=norm(dst.county); Object.keys(zones).some(function(k){ if(norm(zones[k][0])===cn){ code=k; return true; } return false; }); }
+  var z=zones[code];
+  if(!z) return { zone:'?', label: code ? 'Département '+code : 'Département introuvable — précisez le code postal', code:code };
   return { zone:z[1]||'?', label:z[0]+' ('+code+')', base:z[2], code:code };
 }
 function fmtH(h){ var m=Math.round(h*60); return m<60 ? m+' min' : Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'); }
