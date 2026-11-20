@@ -687,7 +687,7 @@
           <div id="wrap-adresse">
             <div style="font-size:12px;font-weight:600;margin-bottom:6px;" class="req-lbl">Ville du client</div>
             <div class="addr-wrap">
-              <input type="text" id="proj-adresse" placeholder="Ex : Grenoble" oninput="window._projRanking=null;calcProjet()" onkeydown="if(event.key==='Enter')calculerDistanceProjet()">
+              <input type="text" id="proj-adresse" placeholder="Ex : Grenoble" oninput="window._projRanking=null;onProjAdresseInput(this.value)" onkeydown="if(event.key==='Enter')calculerDistanceProjet()">
               <button class="addr-btn" id="proj-addr-btn" onclick="calculerDistanceProjet()">↗ Calculer</button>
             </div>
           </div>
@@ -749,7 +749,7 @@
         <div style="margin:4px 0 2px;">
           <button onclick="toggleMesDetail()" id="btn-mes-detail" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 0;font-size:11px;font-family:DM Mono,monospace;color:var(--text3);letter-spacing:.03em;">
             <span id="mes-detail-chevron" style="display:inline-block;transition:transform .2s;font-size:10px;">▶</span>
-            Voir le détail du coût réel d'intervention
+            <span id="mes-detail-lock">🔒</span> Voir le détail du coût réel d'intervention
           </button>
           <div id="mes-detail-panel" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:4px;">
             <div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);">
@@ -2300,12 +2300,22 @@ function lockConfig() { carnetUnlocked=false; cbEqUnlocked=false; configUnlocked
 let pinBuffer = '';
 let pinTarget = 'config'; // 'config' | 'maint' | 'funnel' | 'leads'
 
+var coutsUnlocked = false; // coûts internes (coût horaire, coût km) visibles après code PIN
+function unlockCouts(then) {
+  if (!coutsUnlocked && typeof configUnlocked !== 'undefined' && configUnlocked) coutsUnlocked = true; // code déjà saisi pour la Config
+  if (coutsUnlocked) { if (then) then(); return; }
+  window._afterCoutsUnlock = then || null;
+  pinTarget = 'couts'; pinBuffer = ''; updateDots(); if ($('pin-error')) $('pin-error').textContent = '';
+  $('pin-overlay').classList.remove('hidden');
+}
 function toggleMesDetail() {
+  if (!coutsUnlocked) { unlockCouts(function(){ calcProjet(); toggleMesDetail(); }); return; }
   var panel   = $('mes-detail-panel');
   var chevron = $('mes-detail-chevron');
   var open    = panel.style.display === 'none';
   panel.style.display   = open ? 'block' : 'none';
   chevron.style.transform = open ? 'rotate(180deg)' : '';
+  if ($('mes-detail-lock')) $('mes-detail-lock').style.display = 'none';
 }
 function openLeads()  { switchPage('leads'); }
 function openFunnel() { switchPage('funnel'); }
@@ -2350,6 +2360,7 @@ function checkPin() {
     else if (pinTarget === 'leads')  { leadsUnlocked  = true; switchPage('leads'); }
     else if (pinTarget === 'carnet')    { carnetUnlocked = true; cbEqUnlocked = true; switchPage('carnet'); cbEnter(); }
     else if (pinTarget === 'carnet-eq') { cbEqUnlocked = true; switchPage('carnet'); cbSwitchTab('equipe'); }
+    else if (pinTarget === 'couts') { coutsUnlocked = true; var f = window._afterCoutsUnlock; window._afterCoutsUnlock = null; if (f) f(); if ($('maint-technicien')) calcPage('maint'); }
     else if (pinTarget === 'echant') { echantManager = true; updateEchantManagerUI(); switchPage('echantillons'); renderEchant(); }
     pinBuffer=''; updateDots();
   } else {
@@ -2709,6 +2720,15 @@ function onProjTechChange() {
   }
 }
 
+function onProjAdresseInput(v) {
+  if (!String(v||'').trim()) { // adresse effacée : on repart de zéro
+    $('proj-distance').value = 0; delete window._dureeTrajetAR['proj']; projNuitsManuelles = false; mesPrixManuel = false;
+    if ($('proj-dist-result')) $('proj-dist-result').style.display = 'none';
+    if ($('proj-map')) $('proj-map').style.display = 'none';
+    renderProjReco();
+  }
+  calcProjet();
+}
 function onProjDistChange()   { projNuitsManuelles = false; delete window._dureeTrajetAR['proj']; calcProjet(); }
 function onProjRecalcNuits()  { projNuitsManuelles = false; mesPrixManuel = false; calcProjet(); }
 function onProjNuitsManual()  { projNuitsManuelles = true;  calcProjet(); }
@@ -2849,7 +2869,7 @@ function calcProjet() {
 
   var transport  = dist * ik;
   var hotelCout  = nuits * (vn('cfg-hotel') || 80);
-  var repasData  = calcRepas(dist, duree, nuits);
+  var repasData  = (dist > 0 || duree > 0) ? calcRepas(dist, duree, nuits) : { count:0, total:0, desc:'0 repas' };
   var mo         = moTrajet + moInterv;
   var hasNuits   = nuits > 0;
 
@@ -3577,7 +3597,7 @@ function calcPage(ns) {
   const effJoursInterv  = sm.joursinterv ? (isNaN(_smJoursInterv)  ? duree           : _smJoursInterv)  : duree;
 
   // Repas auto = toujours calculé depuis les valeurs 01-02-03, pas depuis les overrides 04
-  const repas     = calcRepas(dist, duree, nuits);
+  const repas     = (dist > 0 || duree > 0) ? calcRepas(dist, duree, nuits) : { count:0, total:0, desc:'0 repas' };
   const anyManual = sm.heurestrajet || sm.joursinterv || sm.nuits || sm.km;
   const effRepasTotal = sm.repas ? (isNaN(_smRepas) ? repas.total : _smRepas)
                       : anyManual ? (parseFloat($(`${ns}-s-repas`) ? $(`${ns}-s-repas`).value : 0) || repas.total)
@@ -3671,13 +3691,15 @@ function calcPage(ns) {
     const crTotal = crTransport + hotel + effRepasTotal + crMo;
     const marge = forfaitDepl - crTotal, margePctR = forfaitDepl > 0 ? marge / forfaitDepl * 100 : 0;
     const f2 = function(x){ return x.toFixed(2).replace('.', ','); };
+    const lockedRows = '<div class="cr-r"><span><a href="#" onclick="unlockCouts();return false;" style="color:var(--accent);text-decoration:none;">🔒 Afficher le détail des coûts (code PIN)</a></span><span></span></div>';
     $(`${ns}-cout-reel`).innerHTML =
       '<div class="cr-t">Coût réel du déplacement (interne, non facturé) — ' + cbAttr(td.nom || '') + '</div>' +
+      (!coutsUnlocked ? lockedRows : '') + (!coutsUnlocked ? '' :
       '<div class="cr-r"><span>Transport — ' + Math.round(effDist) + ' km × ' + f2(ikInt) + ' €/km (coût interne)</span><span>' + fmtE(crTransport) + '</span></div>' +
       '<div class="cr-r"><span>Hébergement + repas</span><span>' + fmtE(hotel + effRepasTotal) + '</span></div>' +
       (chInt > 0
         ? '<div class="cr-r"><span>Main d\'œuvre trajet — ' + f2(effHeuresTrajet) + ' h × ' + f2(chInt) + ' €/h (chargé)</span><span>' + fmtE(crMo) + '</span></div>'
-        : '<div class="cr-r"><span style="color:var(--text3)">Main d\'œuvre trajet — coût horaire interne non renseigné (Config › Équipe)</span><span>–</span></div>') +
+        : '<div class="cr-r"><span style="color:var(--text3)">Main d\'œuvre trajet — coût horaire interne non renseigné (Config › Équipe)</span><span>–</span></div>')) +
       '<div class="cr-r cr-tot"><span>Coût réel total</span><span>' + fmtE(crTotal) + '</span></div>' +
       '<div class="cr-r cr-m' + (marge < 0 ? ' neg' : '') + '"><span>Marge sur le forfait déplacement</span><span>' + fmtE(marge) + ' (' + margePctR.toFixed(1).replace('.', ',') + ' %)</span></div>';
   }
