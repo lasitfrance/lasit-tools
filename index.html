@@ -2293,6 +2293,11 @@ function switchPage(page) {
     if (v) v.classList.toggle('active', p === page);
     if (t) t.classList.toggle('active', p === page);
   });
+  // Recalcul à l'affichage : prend en compte les changements faits dans la Configuration
+  try {
+    if (page === 'prix'  && typeof calcProjet === 'function' && $('proj-technicien')) calcProjet();
+    if (page === 'maint' && typeof calcPage   === 'function' && $('maint-technicien')) calcPage('maint');
+  } catch (e) { console.warn('[switchPage] recalcul', e); }
 }
 
 function lockConfig() { carnetUnlocked=false; cbEqUnlocked=false; configUnlocked=false; maintUnlocked=false; funnelUnlocked=false; leadsUnlocked=false; switchPage('home'); }
