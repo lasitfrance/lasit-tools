@@ -687,7 +687,7 @@
           <div id="wrap-adresse">
             <div style="font-size:12px;font-weight:600;margin-bottom:6px;" class="req-lbl">Ville du client</div>
             <div class="addr-wrap">
-              <input type="text" id="proj-adresse" placeholder="Ex : Grenoble" oninput="calcProjet()">
+              <input type="text" id="proj-adresse" placeholder="Ex : Grenoble" oninput="window._projRanking=null;calcProjet()" onkeydown="if(event.key==='Enter')calculerDistanceProjet()">
               <button class="addr-btn" id="proj-addr-btn" onclick="calculerDistanceProjet()">↗ Calculer</button>
             </div>
           </div>
@@ -697,6 +697,7 @@
           <div class="spinner" id="proj-dist-spinner"></div>
           <span id="proj-dist-text"></span>
         </div>
+        <div class="zone-result" id="proj-tech-reco" style="display:none;"></div>
         <div id="proj-map" style="display:none;height:220px;border-radius:var(--radius-lg);margin-top:10px;overflow:hidden;border:1px solid var(--border);"></div>
       </div>
     </div>
@@ -748,15 +749,15 @@
         <div style="margin:4px 0 2px;">
           <button onclick="toggleMesDetail()" id="btn-mes-detail" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 0;font-size:11px;font-family:DM Mono,monospace;color:var(--text3);letter-spacing:.03em;">
             <span id="mes-detail-chevron" style="display:inline-block;transition:transform .2s;font-size:10px;">▶</span>
-            Voir le détail du coût d'intervention
+            Voir le détail du coût réel d'intervention
           </button>
           <div id="mes-detail-panel" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:4px;">
             <div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);">
-              <span style="font-size:12px;color:var(--text2);">Main d'œuvre (<span id="prix-mes-lb-duree">0</span> j + <span id="prix-mes-lb-trajet">0</span> h trajet)</span>
+              <span style="font-size:12px;color:var(--text2);">Main d'œuvre (<span id="prix-mes-lb-duree">0</span> j × 7,4 h + <span id="prix-mes-lb-trajet">0</span> h trajet) × <span id="prix-mes-lb-ch">–</span></span>
               <span style="font-family:DM Mono,monospace;font-size:12px;color:var(--text);" id="prix-mes-mo">0,00 €</span>
             </div>
             <div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);">
-              <span style="font-size:12px;color:var(--text2);">Transport (<span id="prix-mes-lb-km">0</span> km)</span>
+              <span style="font-size:12px;color:var(--text2);">Transport (<span id="prix-mes-lb-km">0</span> km × <span id="prix-mes-lb-ik">–</span> coût interne)</span>
               <span style="font-family:DM Mono,monospace;font-size:12px;color:var(--text);" id="prix-mes-transport">0,00 €</span>
             </div>
             <div id="prix-mes-row-hotel" style="display:none;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);">
@@ -772,12 +773,8 @@
 
         <div class="field-row row-auto">
           <div>
-            <div class="frl">Coût interne mise en service</div>
-            <div class="frh">⚡ Calculé automatiquement</div>
-            <label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer;">
-              <input type="checkbox" id="chk-exclure-mo" onchange="syncMesCout()" style="accent-color:var(--accent);width:13px;height:13px;">
-              <span style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace;">Exclure la main d'œuvre du coût interne</span>
-            </label>
+            <div class="frl">Coût réel mise en service</div>
+            <div class="frh">⚡ Main d'œuvre au coût chargé + transport au coût interne + hôtel + repas</div>
           </div>
           <div style="width:220px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;">
             <span style="font-family:DM Mono,monospace;font-size:14px;color:var(--text3);" id="proj-cout-mes-display">0,00 €</span>
@@ -785,7 +782,7 @@
         </div>
 
         <div class="field-row row-input" id="wrap-mes-prix">
-          <div><div class="frl">Prix Mise en Service facturé au client</div><div class="frh">Montant dans l'offre commerciale</div></div>
+          <div><div class="frl">Prix Mise en Service facturé au client</div><div class="frh" id="proj-mes-hint">Montant dans l'offre commerciale</div></div>
           <div style="width:220px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;">
             <button onclick="mesPrixManuel=false;syncMesCout();" title="Recalculer automatiquement" style="flex-shrink:0;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text3);padding:4px 7px;cursor:pointer;font-size:12px;transition:all .15s;line-height:1;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border2)'">↺</button>
             <input type="number" class="inline-num" id="prix-mes" value="0" min="0" step="10" oninput="mesPrixManuel=true;calcProjet();" style="width:120px;">
@@ -1860,8 +1857,8 @@
             <div class="frr"><input type="number" class="inline-num" id="cfg-prix-carb" value="2" min="1.00" max="2.50" step="0.01" oninput="saveConfig()"><span class="fru">€/L</span></div>
           </div>
           <div class="field-row">
-            <div><div style="display:flex;align-items:center;gap:7px;"><span>🔧</span><div class="frl" style="font-size:12px;">Marge — Mise en service</div></div></div>
-            <div class="frr"><input type="number" class="inline-num" id="cfg-marge-install" value="15" min="0" max="100" step="5" oninput="saveConfig()"><span class="fru">%</span></div>
+            <div><div style="display:flex;align-items:center;gap:7px;"><span>🔧</span><div class="frl" style="font-size:12px;">Majoration — Mise en service</div></div><div class="frh">Appliquée au coût réel de la MES (prix arrondi à la centaine supérieure)</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-maj-mes" value="25" min="0" max="300" step="5" oninput="saveConfig()"><span class="fru">%</span></div>
           </div>
         </div>
       </div>
@@ -2386,7 +2383,7 @@ function loadConfig() {
   set('cfg-seuil',             cfg.seuil);
   set('cfg-seuil-trajet',      cfg.seuilTrajet);
   set('cfg-hotel',             cfg.hotel);
-  set('cfg-marge-install',     cfg.margeInstall);
+  if($('cfg-maj-mes')) $('cfg-maj-mes').value = (cfg.majMes==null ? 25 : cfg.majMes);
   set('cfg-taux-heure-trajet', cfg.tauxHeureTrajet);
   set('cfg-cout-km', cfg.coutKm);
   set('cfg-forfait-interv-1j', cfg.forfaitInterv1j);
@@ -2533,7 +2530,7 @@ function getDefaultConfig() {
     seuil: 350,
     seuilTrajet: 150,
     hotel: 95,
-    margeInstall: 15,
+    majMes: 25,
     tauxHeureTrajet: 76,
     coutKm: 0.98,
     forfaitInterv1j: 784,
@@ -2571,7 +2568,7 @@ function saveConfig() {
     seuil:            vn('cfg-seuil'),
     seuilTrajet:      vn('cfg-seuil-trajet'),
     hotel:            vn('cfg-hotel'),
-    margeInstall:     vn('cfg-marge-install'),
+    majMes:           $('cfg-maj-mes') ? vn('cfg-maj-mes') : (getCfg().majMes==null ? 25 : getCfg().majMes),
     tauxHeureTrajet: vn('cfg-taux-heure-trajet'),
     coutKm: vn('cfg-cout-km'),
     forfaitInterv1j: vn('cfg-forfait-interv-1j'),
@@ -2703,7 +2700,7 @@ function onProjTechChange() {
   // Si une adresse est déjà saisie, recalculer la distance depuis la nouvelle base
   var addr = $('proj-adresse') ? $('proj-adresse').value.trim() : '';
   if (addr) {
-    calculerDistanceProjet();
+    calculerDistanceProjet(false);
   } else {
     $('proj-distance').value = 0;
     projNuitsManuelles = false;
@@ -2755,18 +2752,42 @@ function showRouteMap(containerId, oriLat, oriLon, dstLat, dstLon, coords, baseL
   setTimeout(function(){ map.invalidateSize(); }, 100);
 }
 
-async function calculerDistanceProjet() {
+function renderProjReco() {
+  var el = $('proj-tech-reco'), rk = window._projRanking; if (!el) return;
+  if (!rk || !rk.length) { el.style.display = 'none'; return; }
+  var best = rk[0], cur = $('proj-technicien').value;
+  var h = '🚐 Technicien le plus proche : <b>' + cbAttr(best.nom) + '</b> — ' + fmtH(best.hours) + ' de route' +
+    (rk.length > 1 ? ' <span style="color:var(--text3)">(' + rk.slice(1).map(function(r){ return cbAttr(r.nom) + ' : ' + fmtH(r.hours); }).join(' · ') + ')</span>' : '');
+  if (cur && cur !== best.key) { var m = getTechMeta()[cur]; h += '<br><span style="color:var(--red)">↳ Choix manuel : ' + cbAttr(m ? m.nom : cur) + '</span>'; }
+  el.innerHTML = h; el.style.display = 'block';
+}
+async function calculerDistanceProjet(auto) {
   var addr = $('proj-adresse').value.trim();
   if (!addr) return;
-  var key  = $('proj-technicien').value;
-  var base = getTechBase(key);
+  if (auto === undefined) auto = true;
   var btn  = $('proj-addr-btn'), res = $('proj-dist-result');
   btn.disabled = true;
   res.style.display = 'flex'; res.className = 'dist-result loading';
   $('proj-dist-spinner').style.display = 'block';
   $('proj-dist-text').textContent = "Géocodage des adresses...";
   try {
-    const [ori, dst] = await Promise.all([geocode(base), geocode(addr)]);
+    const dst = await geocode(addr);
+    if (auto || !window._projRanking) {
+      $('proj-dist-text').textContent = "Comparaison des techniciens...";
+      const ids = getTechIds().filter(function(id){ const m = getTechMeta()[id]; return m && !m.pending; });
+      window._projRanking = (await Promise.all(ids.map(async function(id){
+        try { const o = await geocodeBase(getTechBase(id)); const r = await routeInfo(o.lat, o.lon, dst.lat, dst.lon);
+              return { key:id, nom:getTechMeta()[id].nom, hours:r.hours }; } catch(e){ return null; }
+      }))).filter(Boolean).sort(function(a, b){ return a.hours - b.hours; });
+      if (auto && window._projRanking.length && $('proj-technicien').value !== window._projRanking[0].key) {
+        $('proj-technicien').value = window._projRanking[0].key;
+      }
+    }
+    var key  = $('proj-technicien').value;
+    var base = getTechBase(key);
+    $('proj-origin-label').textContent = 'Départ : ' + base;
+    renderProjReco();
+    const ori = await geocodeBase(base);
     $('proj-dist-text').textContent = "Calcul de l'itinéraire...";
     const info = await routeInfo(ori.lat, ori.lon, dst.lat, dst.lon);
     const km = info.km;
@@ -2788,6 +2809,7 @@ async function calculerDistanceProjet() {
     res.className = 'dist-result err';
     $('proj-dist-spinner').style.display = 'none';
     $('proj-dist-text').textContent = '✕  ' + (e.message || 'Erreur réseau — vérifiez votre connexion');
+    renderProjReco();
   }
   btn.disabled = false;
 }
@@ -2797,19 +2819,7 @@ function calcProjet() {
   var techKey  = $('proj-technicien') ? $('proj-technicien').value : 'cisley';
   var ik       = getIK(techKey);
 
-  // Utiliser les forfaits fixes (mêmes que le calculateur Maintenance)
   var cfg2 = getCfg();
-  var forfait1j  = cfg2.forfaitInterv1j  ?? 745;
-  var forfait05j = cfg2.forfaitInterv05j ?? 385;
-  function calcMoForfait(jours) {
-    var fullDays = Math.floor(jours + 1e-9);
-    var rem      = jours - fullDays;
-    var total    = fullDays * forfait1j;
-    if (rem >= 0.5 - 1e-9) total += forfait05j;
-    else if (rem > 1e-9)   total += forfait05j * (rem / 0.5);
-    return total;
-  }
-
   var dist  = vn('proj-distance');
   var duree = vn('proj-duree');
 
@@ -2831,10 +2841,11 @@ function calcProjet() {
   var heuresTrajet = (window._dureeTrajetAR && window._dureeTrajetAR['proj'] != null)
     ? Math.round(window._dureeTrajetAR['proj'] * 100) / 100
     : (dist / VITESSE_FALLBACK_KMH);
-  var moTrajet = heuresTrajet * (cfg2.tauxHeureTrajet ?? 76);
-
-  // Intervention : forfaits fixes
-  var moInterv = calcMoForfait(duree);
+  // Coût réel : (heures de trajet + heures sur site) × coût horaire chargé du technicien
+  var chCharge   = getCoutHoraireCharge(techKey);
+  var heuresSite = duree * HEURES_JOUR_SITE;
+  var moTrajet = heuresTrajet * chCharge;
+  var moInterv = heuresSite * chCharge;
 
   var transport  = dist * ik;
   var hotelCout  = nuits * (vn('cfg-hotel') || 80);
@@ -2849,6 +2860,8 @@ function calcProjet() {
     elDuree.textContent                  = duree % 1 === 0 ? duree : duree.toFixed(1);
     $('prix-mes-lb-trajet').textContent  = heuresTrajet.toFixed(2).replace(/\.?0+$/, '');
     $('prix-mes-lb-km').textContent      = Math.round(dist);
+    if ($('prix-mes-lb-ik')) $('prix-mes-lb-ik').textContent = ik.toFixed(2).replace('.', ',') + ' €/km';
+    if ($('prix-mes-lb-ch')) { $('prix-mes-lb-ch').textContent = chCharge > 0 ? chCharge.toFixed(2).replace('.', ',') + ' €/h chargé' : 'coût horaire non renseigné (Config › Équipe)'; $('prix-mes-lb-ch').style.color = chCharge > 0 ? '' : 'var(--red)'; }
     $('prix-mes-mo').textContent         = fmtE(mo);
     $('prix-mes-transport').textContent  = fmtE(transport);
     $('prix-mes-lb-nuits').textContent   = nuits;
@@ -2951,9 +2964,8 @@ function adjustRemise(delta) {
 function syncMesCout() {
   var c = window._mesCouts || { mo:0, transport:0, hotel:0, repas:0 };
 
-  // Coût interne total — avec option d'exclure la main d'œuvre
-  var exclureMo = $('chk-exclure-mo') && $('chk-exclure-mo').checked;
-  var coutTotal = (exclureMo ? 0 : c.mo) + c.transport + c.hotel + c.repas;
+  // Coût réel total de la mise en service
+  var coutTotal = c.mo + c.transport + c.hotel + c.repas;
   window._mesCoutTotal = coutTotal;
 
   var dispEl = $('proj-cout-mes-display');
@@ -2961,8 +2973,8 @@ function syncMesCout() {
 
   // Prix facturé au client = tous les postes × (1 + marge MES), sauf si saisie manuelle
   if (!mesPrixManuel) {
-    var margeInstall = (getCfg().margeInstall ?? 15) / 100;
-    var facture = (c.mo + c.transport + c.hotel + c.repas) * (1 + margeInstall);
+    var majMes = (getCfg().majMes ?? 25) / 100;
+    var facture = coutTotal * (1 + majMes);
     // Arrondi au 100 supérieur
     facture = Math.ceil(facture / 100) * 100;
     var mesPrixEl = $('prix-mes');
@@ -2997,6 +3009,11 @@ function calcPrix() {
 
   // MES
   var margeMes = mesPrix - mesCout;
+  if ($('proj-mes-hint')) {
+    $('proj-mes-hint').innerHTML = mesPrix > 0 && mesCout > 0
+      ? 'Marge MES : <b style="color:' + (margeMes < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtE(margeMes) + ' (' + (margeMes / mesPrix * 100).toFixed(1).replace('.', ',') + ' %)</b>' + (mesPrixManuel ? ' · <span style="color:#C2410C">prix ajusté manuellement</span>' : '')
+      : 'Montant dans l\'offre commerciale';
+  }
 
   // Livraison : 0% marge
   var shippingClient = shipping;
@@ -3476,7 +3493,8 @@ function calcJoursTrajet(dist) {
 }
 
 // Calcul précis du temps de trajet facturé pour la maintenance, en heures (taux horaire fixe)
-var VITESSE_FALLBACK_KMH = 80; // utilisé seulement si la durée réelle n'est pas disponible
+var VITESSE_FALLBACK_KMH = 80;
+var HEURES_JOUR_SITE = 7.4; // heures comptées au coût par jour de mise en service // utilisé seulement si la durée réelle n'est pas disponible
 function calcHeuresTrajetMaint(ns, dist) {
   var heures = (window._dureeTrajetAR && window._dureeTrajetAR[ns] != null)
     ? window._dureeTrajetAR[ns]
