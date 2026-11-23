@@ -1728,6 +1728,8 @@
     .cr-toggle { cursor:pointer; user-select:none; }
     .cr-closed .cr-toggle { display:inline-block; font:11px 'DM Mono',monospace; color:var(--text3); padding:2px 0; }
     .cr-toggle:hover { color:var(--accent); }
+    .cr-hide { background:var(--bg2); border:1px solid var(--border2); border-radius:6px; color:var(--text2); font:600 10px 'DM Mono',monospace; padding:3px 9px; cursor:pointer; text-transform:none; letter-spacing:0; }
+    .cr-hide:hover { color:var(--accent); border-color:var(--accent); }
     .cr-block .cr-t { font:700 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--text3); margin-bottom:6px; }
     .cr-block .cr-r { display:flex; justify-content:space-between; gap:12px; padding:3px 0; }
     .cr-block .cr-r span:last-child { font-family:'DM Mono',monospace; white-space:nowrap; }
@@ -3720,7 +3722,7 @@ function calcPage(ns) {
     } else {
     $(`${ns}-cout-reel`).classList.remove('cr-closed');
     $(`${ns}-cout-reel`).innerHTML =
-      '<div class="cr-t cr-toggle" onclick="window._crOpen[\'' + ns + '\']=false;calcPage(\'' + ns + '\')" title="Masquer">Coût réel du déplacement (interne, non facturé) — ' + cbAttr(td.nom || '') + ' <span>▾</span></div>' +
+      '<div class="cr-t" style="display:flex;align-items:center;gap:10px;"><span style="flex:1;">Coût réel du déplacement (interne, non facturé) — ' + cbAttr(td.nom || '') + '</span><button class="cr-hide" onclick="window._crOpen[\'' + ns + '\']=false;calcPage(\'' + ns + '\')">Masquer ▴</button></div>' +
       (!coutsUnlocked ? lockedRows : '') + (!coutsUnlocked ? '' :
       '<div class="cr-r"><span>Transport — ' + Math.round(effDist) + ' km × ' + f2(ikInt) + ' €/km (coût interne)</span><span>' + fmtE(crTransport) + '</span></div>' +
       '<div class="cr-r"><span>Hébergement + repas</span><span>' + fmtE(hotel + effRepasTotal) + '</span></div>' +
