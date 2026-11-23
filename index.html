@@ -1721,6 +1721,8 @@
        BLOC — ÉQUIPE (source unique : commerciaux + techniciens)
   ══════════════════════════════════════════ -->
   <style>
+    .trc { margin-left:auto; margin-right:18px; font:11px 'DM Mono',monospace; color:var(--text3); white-space:nowrap; }
+    .trc:empty { display:none; }
     .cr-block { margin:0; padding:12px 22px 14px; background:var(--bg3); border-top:1px dashed var(--border2); font-size:12px; color:var(--text2); }
     .cr-block .cr-t { font:700 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--text3); margin-bottom:6px; }
     .cr-block .cr-r { display:flex; justify-content:space-between; gap:12px; padding:3px 0; }
@@ -2233,7 +2235,7 @@ function buildSimulatorHTML(ns) {
   +          " h"
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'heurestrajet')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-heurestrajet\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
-  +        "</span><span class=\"trv\" id=\"" + n + "-lb-mo-trajet\">&ndash;</span></div>";
+  +        "</span><span class=\"trc\" id=\"" + n + "-c-mo-trajet\"></span><span class=\"trv\" id=\"" + n + "-lb-mo-trajet\">&ndash;</span></div>";
 
   // Transport row — km éditable
   h +=     "<div class=\"total-row\"><span class=\"trl\">Transport &mdash; "
@@ -2241,7 +2243,7 @@ function buildSimulatorHTML(ns) {
   +          " km"
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'km')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-km\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
-  +        "</span><span class=\"trv\" id=\"" + n + "-lb-transport\">&ndash;</span></div>";
+  +        "</span><span class=\"trc\" id=\"" + n + "-c-transport\"></span><span class=\"trv\" id=\"" + n + "-lb-transport\">&ndash;</span></div>";
 
   // Hotel row — nuits éditable
   h +=     "<div class=\"total-row\" id=\"" + n + "-row-hotel\"><span class=\"trl\">H&eacute;bergement &mdash; "
@@ -2249,14 +2251,14 @@ function buildSimulatorHTML(ns) {
   +          " nuit(s)"
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'nuits')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-nuits\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
-  +        "</span><span class=\"trv\" id=\"" + n + "-lb-hotel\">&ndash;</span></div>";
+  +        "</span><span class=\"trc\" id=\"" + n + "-c-hotel\"></span><span class=\"trv\" id=\"" + n + "-lb-hotel\">&ndash;</span></div>";
 
   h +=     "<div class=\"total-row\" id=\"" + n + "-row-repas\"><span class=\"trl\">Repas &mdash; "
   +          "<input type=\"number\" id=\"" + n + "-s-repas\" value=\"0\" min=\"0\" max=\"500\" step=\"5\" style=\"width:50px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--accent);font-family:DM Mono,monospace;font-size:13px;text-align:center;outline:none;\" oninput=\"onSyntheseManual(&apos;" + n + "&apos;,'repas')\">"
   +          " €"
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'repas')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-repas\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
-  +        "</span><span class=\"trv\" id=\"" + n + "-lb-repas\">&ndash;</span></div>";
+  +        "</span><span class=\"trc\" id=\"" + n + "-c-repas\"></span><span class=\"trv\" id=\"" + n + "-lb-repas\">&ndash;</span></div>";
 
   h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait d&eacute;placement HT</span><span class=\"trv fd-wrap\"><button class=\"fd-reset\" id=\"" + n + "-fd-reset\" title=\"Revenir au forfait calcul&eacute;\" onclick=\"resetForfaitDepl(&apos;" + n + "&apos;)\" style=\"display:none;\">&#8634;</button><input type=\"text\" class=\"fd-in\" id=\"" + n + "-in-forfait-depl\" title=\"Modifiable : saisissez un montant pour ajuster le forfait\" onfocus=\"this.select()\" onkeydown=\"if(event.key===&apos;Enter&apos;)this.blur()\" onchange=\"onForfaitDeplManual(&apos;" + n + "&apos;,this.value)\"><span class=\"fd-eur\">&euro;</span></span></div>";
   h +=     "<div class=\"fd-note\" id=\"" + n + "-fd-note\" style=\"display:none;\"></div>";
@@ -2270,12 +2272,13 @@ function buildSimulatorHTML(ns) {
   +          " j"
   +          " <button onclick=\"resetSyntheseField(&apos;" + n + "&apos;,'joursinterv')\" title=\"Auto\" style=\"background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;\">↺</button>"
   +          " <span id=\"" + n + "-auto-joursinterv\" style=\"font-size:10px;color:var(--text3);font-family:DM Mono,monospace;\"></span>"
-  +        "</span><span class=\"trv\" id=\"" + n + "-lb-mo-interv-detail\" style=\"font-size:10px;color:var(--text3);\">&ndash;</span></div>";
+  +        "</span><span class=\"trc\" id=\"" + n + "-c-mo-interv\"></span><span class=\"trv\" id=\"" + n + "-lb-mo-interv-detail\" style=\"font-size:10px;color:var(--text3);\">&ndash;</span></div>";
 
   h +=     "<div class=\"total-row main\" style=\"background:rgba(15,158,213,.08);\"><span class=\"trl\" style=\"font-weight:700;\">Forfait intervention HT</span><span class=\"trv\" id=\"" + n + "-lb-forfait-interv\">&ndash;</span></div>";
 
   // ── TOTAL ──
   h +=     "<div class=\"total-row main\" style=\"margin-top:8px;\"><span class=\"trl\">Total intervention HT</span><span class=\"trv\" id=\"" + n + "-lb-total\">&ndash;</span></div>";
+  h +=     "<div class=\"cr-block\" id=\"" + n + "-cout-global\"></div>";
   h +=     "</div>";
   h +=   "</div>";
   h +=   mentionBlock;
@@ -3710,6 +3713,24 @@ function calcPage(ns) {
   }
 
   if ($(`${ns}-lb-mo-interv-detail`)) $(`${ns}-lb-mo-interv-detail`).textContent = joursIntervDetail;
+  // ── Coûts réels (chargés) ligne par ligne + bilan global ──
+  if ($(`${ns}-cout-global`)) {
+    const chG = getCoutHoraireCharge(techKey), ikG = getIK(techKey);
+    const c = { 'mo-trajet': effHeuresTrajet * chG, transport: effDist * ikG, hotel: hotel, repas: effRepasTotal, 'mo-interv': effJoursInterv * HEURES_JOUR_SITE * chG };
+    Object.keys(c).forEach(function(k){
+      const el = $(`${ns}-c-${k}`); if (!el) return;
+      const noCh = (k === 'mo-trajet' || k === 'mo-interv') && !(chG > 0);
+      el.textContent = coutsUnlocked ? (noCh ? 'coût : ?' : 'coût ' + fmtE(c[k])) : '';
+    });
+    const coutTot = c['mo-trajet'] + c.transport + c.hotel + c.repas + c['mo-interv'];
+    const mG = total - coutTot, mGp = total > 0 ? mG / total * 100 : 0;
+    $(`${ns}-cout-global`).innerHTML =
+      '<div class="cr-t">Bilan réel de l\'intervention (interne, non facturé)</div>' +
+      (coutsUnlocked ? '' : '<div class="cr-r"><span><a href="#" onclick="unlockCouts();return false;" style="color:var(--accent);text-decoration:none;">🔒 Afficher le coût de chaque ligne (code PIN)</a></span><span></span></div>') +
+      (coutsUnlocked ? '<div class="cr-r"><span>Intervention — ' + String(Math.round(effJoursInterv*100)/100).replace('.', ',') + ' j × 7,4 h × ' + (chG > 0 ? chG.toFixed(2).replace('.', ',') + ' €/h (chargé)' : 'coût horaire non renseigné') + '</span><span>' + fmtE(c['mo-interv']) + '</span></div>' : '') +
+      '<div class="cr-r cr-tot"><span>Coût réel total (déplacement + intervention)</span><span>' + fmtE(coutTot) + '</span></div>' +
+      '<div class="cr-r cr-m' + (mG < 0 ? ' neg' : '') + '"><span>Marge sur le total intervention</span><span>' + fmtE(mG) + ' (' + mGp.toFixed(1).replace('.', ',') + ' %)</span></div>';
+  }
   if ($(`${ns}-lb-forfait-interv`))   $(`${ns}-lb-forfait-interv`).textContent   = fmtE(forfaitInterv);
 
   $(`${ns}-lb-total`).textContent = fmtE(total);
