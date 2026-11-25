@@ -1808,12 +1808,12 @@
         <div class="cfg-sub-title">Nuit&eacute;es &amp; h&eacute;bergement</div>
         <div class="cfg-sub-body">
           <div class="field-row" style="padding-top:0;">
-            <div><div class="frl" style="font-size:12px;">Seuil nuit&eacute;e</div><div class="frh">Distance AR d&eacute;clenchant une nuit de trajet</div></div>
-            <div class="frr"><input type="number" class="inline-num" id="cfg-seuil" value="350" min="50" max="1000" step="50" oninput="saveConfig()"><span class="fru">km AR</span></div>
+            <div><div class="frl" style="font-size:12px;">Retour quotidien</div><div class="frh">Temps de route aller jusqu'auquel le technicien rentre chez lui chaque soir (aucune nuit, déjeuner seul)</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-h-quotidien" value="1" min="0" max="5" step="0.25" oninput="saveConfig()"><span class="fru">h aller</span></div>
           </div>
           <div class="field-row">
-            <div><div class="frl" style="font-size:12px;">Seuil trajet journ&eacute;e</div><div class="frh">Distance aller au-del&agrave; = trajet long (impacte le calcul de nuit&eacute;e)</div></div>
-            <div class="frr"><input type="number" class="inline-num" id="cfg-seuil-trajet" value="150" min="50" max="500" step="25" oninput="saveConfig()"><span class="fru">km aller</span></div>
+            <div><div class="frl" style="font-size:12px;">Retour le soir du dernier jour</div><div class="frh">Au-delà de 1 h : arrivée la veille. Jusqu'à cette durée, retour le soir même (dîner sur la route) ; au-delà, nuit sur place</div></div>
+            <div class="frr"><input type="number" class="inline-num" id="cfg-h-retour" value="4" min="1" max="10" step="0.25" oninput="saveConfig()"><span class="fru">h aller</span></div>
           </div>
           <div class="field-row">
             <div><div class="frl" style="font-size:12px;">H&ocirc;tel / nuit</div></div>
@@ -2404,8 +2404,8 @@ function loadConfig() {
   if ($('cfg-app-password')) $('cfg-app-password').value = cfg.appPassword || APP_PASSWORD_DEFAULT;
   const set = (id, val) => { if ($(id)) $(id).value = val; };
   set('cfg-prix-carb',         cfg.prixCarb);
-  set('cfg-seuil',             cfg.seuil);
-  set('cfg-seuil-trajet',      cfg.seuilTrajet);
+  if($('cfg-h-quotidien')) $('cfg-h-quotidien').value = (cfg.hQuotidien==null ? 1 : cfg.hQuotidien);
+  if($('cfg-h-retour')) $('cfg-h-retour').value = (cfg.hRetour==null ? 4 : cfg.hRetour);
   set('cfg-hotel',             cfg.hotel);
   if($('cfg-maj-mes')) $('cfg-maj-mes').value = (cfg.majMes==null ? 25 : cfg.majMes);
   set('cfg-taux-heure-trajet', cfg.tauxHeureTrajet);
@@ -2551,8 +2551,8 @@ function getDefaultConfig() {
     pin: '1234',
     appPassword: 'Solferino5!',
     prixCarb: 2,
-    seuil: 350,
-    seuilTrajet: 150,
+    hQuotidien: 1,
+    hRetour: 4,
     hotel: 95,
     majMes: 25,
     tauxHeureTrajet: 76,
@@ -2589,8 +2589,8 @@ function saveConfig() {
     pin:              window.PIN_CODE,
     appPassword:      $('cfg-app-password') ? $('cfg-app-password').value || APP_PASSWORD_DEFAULT : APP_PASSWORD_DEFAULT,
     prixCarb:         vn('cfg-prix-carb'),
-    seuil:            vn('cfg-seuil'),
-    seuilTrajet:      vn('cfg-seuil-trajet'),
+    hQuotidien:       $('cfg-h-quotidien') ? (parseFloat($('cfg-h-quotidien').value)||0) : (getCfg().hQuotidien ?? 1),
+    hRetour:          $('cfg-h-retour') ? (parseFloat($('cfg-h-retour').value)||0) : (getCfg().hRetour ?? 4),
     hotel:            vn('cfg-hotel'),
     majMes:           $('cfg-maj-mes') ? vn('cfg-maj-mes') : (getCfg().majMes==null ? 25 : getCfg().majMes),
     tauxHeureTrajet: vn('cfg-taux-heure-trajet'),
@@ -2858,14 +2858,14 @@ function calcProjet() {
 
   // Nuitées auto
   if (!projNuitsManuelles) {
-    var na = calcNuitsAuto(dist, duree);
+    var na = calcNuitsAuto(dist, duree, 'proj');
     $('proj-nuits').value = na;
     if (na > 0) {
       $('proj-nuits-badge').style.display = 'inline-flex';
-      $('proj-nuits-hint').textContent = na + ' nuit(s) calculée(s)';
+      $('proj-nuits-hint').textContent = na + ' nuit(s) — ' + nuitsExplication(dist, duree, 'proj');
     } else {
       $('proj-nuits-badge').style.display = 'none';
-      $('proj-nuits-hint').textContent = 'Aucune nuitée — trajet dans la journée';
+      $('proj-nuits-hint').textContent = nuitsExplication(dist, duree, 'proj');
     }
   }
   var nuits = vn('proj-nuits');
@@ -2882,7 +2882,7 @@ function calcProjet() {
 
   var transport  = dist * ik;
   var hotelCout  = nuits * (vn('cfg-hotel') || 80);
-  var repasData  = (dist > 0 || duree > 0) ? calcRepas(dist, duree, nuits) : { count:0, total:0, desc:'0 repas' };
+  var repasData  = (dist > 0 || duree > 0) ? calcRepas(dist, duree, nuits, 'proj') : { count:0, total:0, desc:'0 repas' };
   var mo         = moTrajet + moInterv;
   var hasNuits   = nuits > 0;
 
@@ -3489,8 +3489,8 @@ function resetSyntheseField(ns, field) {
   _autoUpdate = true;
   const sm2 = syntheseManuelle[ns] || {};
   if (field === 'repas' && $(`${ns}-s-repas`)) {
-    var nuits2 = calcNuitsAuto(vn(`${ns}-distance`), vn(`${ns}-duree`));
-    var repas2 = calcRepas(vn(`${ns}-distance`), vn(`${ns}-duree`), nuits2);
+    var nuits2 = calcNuitsAuto(vn(`${ns}-distance`), vn(`${ns}-duree`), ns);
+    var repas2 = calcRepas(vn(`${ns}-distance`), vn(`${ns}-duree`), nuits2, ns);
     $(`${ns}-s-repas`).value = repas2.total.toFixed(0);
   }
   _autoUpdate = false;
@@ -3502,8 +3502,23 @@ function resetSynthese(ns) {
   calcPage(ns);
 }
 
-function getSeuilNuit()   { return vn('cfg-seuil')        || 350; }
-function getSeuilTrajet() { return vn('cfg-seuil-trajet') || 200; }
+function getSeuilTrajet() { return 200; } // (ancien seuil km — n'est plus utilisé pour les nuitées)
+function getHQuotidien() { var v = $('cfg-h-quotidien') ? parseFloat($('cfg-h-quotidien').value) : getCfg().hQuotidien; return isFinite(v) ? v : 1; }
+function getHRetour()    { var v = $('cfg-h-retour')    ? parseFloat($('cfg-h-retour').value)    : getCfg().hRetour;    return isFinite(v) ? v : 4; }
+// Temps de route ALLER (h) : durée réelle de l'itinéraire si calculée, sinon estimation à vitesse moyenne
+function tempsAller(ns, dist) {
+  var ar = (ns && window._dureeTrajetAR && window._dureeTrajetAR[ns] != null) ? window._dureeTrajetAR[ns] : (dist / VITESSE_FALLBACK_KMH);
+  return ar / 2;
+}
+// Déroulé du déplacement : nuit la veille, nuits entre les jours, nuit le dernier soir
+function planDeplacement(dist, duree, ns) {
+  var T = tempsAller(ns, dist), J = Math.max(1, Math.ceil(duree - 1e-9)), demi = duree > 0 && duree <= 0.5 + 1e-9;
+  var p = { T:T, jours:J, quotidien:false, veille:0, entre:0, apres:0, demi:demi };
+  if (!(dist > 0) || T <= getHQuotidien()) { p.quotidien = true; return p; }
+  if (demi) { p.veille = T > getHRetour() ? 1 : 0; return p; }      // demi-journée : pas de veille jusqu'au seuil de retour
+  p.veille = 1; p.entre = J - 1; p.apres = T > getHRetour() ? 1 : 0;
+  return p;
+}
 
 function onDistChange(ns) { nuitsManuelles[ns]=false; delete window._dureeTrajetAR[ns]; calcPage(ns); }
 function onForfaitDeplManual(ns, v) {
@@ -3535,44 +3550,47 @@ function calcHeuresTrajetMaint(ns, dist) {
   return Math.round(heures * 100) / 100; // précision au centième d'heure (temps réel, pas d'arrondi à l'heure)
 }
 
-function calcNuitsAuto(dist, duree) {
-  const nuitsSurPlace = Math.max(0, Math.ceil(duree) - 1);
-  let nuitsTrajet = 0;
-  if (dist > getSeuilNuit()) {
-    nuitsTrajet = (dist/2) > getSeuilTrajet() ? 2 : 1;
-  }
-  return nuitsSurPlace + nuitsTrajet;
+function calcNuitsAuto(dist, duree, ns) {
+  if (!(dist > 0) && !(duree > 0)) return 0;
+  var p = planDeplacement(dist, duree, ns);
+  return p.quotidien ? 0 : p.veille + p.entre + p.apres;
+}
+function nuitsExplication(dist, duree, ns) {
+  var p = planDeplacement(dist, duree, ns), t = fmtH(p.T) + ' de route';
+  if (!(dist > 0)) return 'Aucune nuitée';
+  if (p.quotidien) return 'Aucune nuitée — retour chaque soir (' + t + ')';
+  if (p.demi && !p.veille) return 'Aucune nuitée — demi-journée, retour le soir (' + t + ')';
+  var parts = [];
+  if (p.veille) parts.push('veille');
+  if (p.entre) parts.push(p.entre + ' entre les jours');
+  if (p.apres) parts.push('dernier soir');
+  return (parts.length ? parts.join(' + ') : 'aucune nuit') + (p.apres || p.demi ? '' : ', retour le soir') + ' (' + t + ')';
 }
 
 // ══════════════════════════════════════════════
 //  REPAS
 // ══════════════════════════════════════════════
-function calcRepas(dist, duree, nuits) {
+function calcRepas(dist, duree, nuits, ns) {
   const pdj=vn('cfg-pdj'), dej=vn('cfg-dej'), din=vn('cfg-diner');
-  const longRoute = (dist/2) > getSeuilTrajet();
+  const p = planDeplacement(dist, duree, ns);
   const days = [];
-
-  if (nuits === 0) {
-    // AR dans la journée : déjeuner + dîner par jour d'intervention
-    const nbJ = Math.max(1, Math.ceil(duree));
-    for (let i=0; i<nbJ; i++) {
-      days.push({ repas:[{p:dej},{p:din}] });
-    }
-  } else {
-    // Jour de départ
+  if (p.quotidien) {
+    // Retour chaque soir : déjeuner seul par jour d'intervention
+    for (let i=0; i<p.jours; i++) days.push({ repas:[{p:dej}] });
+  } else if (p.demi && !p.veille) {
+    // Demi-journée sans nuit : déjeuner + dîner sur la route
     days.push({ repas:[{p:dej},{p:din}] });
-    // Jours intervention
-    const nbJ = Math.ceil(duree);
-    for (let i=0;i<nbJ;i++) {
-      const isLast = i===nbJ-1;
-      const r = [{p:pdj},{p:dej}];
-      if (!isLast || longRoute) r.push({p:din});
+  } else {
+    if (p.veille) days.push({ repas:[{p:din}] });                    // dîner la veille
+    for (let i=0; i<p.jours; i++) {
+      const r = [];
+      if (p.veille || i > 0) r.push({p:pdj});                         // nuit à l'hôtel avant ce jour
+      r.push({p:dej});
+      r.push({p:din});                                                 // dîner : entre les jours, sur la route ou à l'hôtel le dernier soir
       days.push({ repas:r });
     }
-    // Jour retour si grande distance
-    if (longRoute) days.push({ repas:[{p:pdj},{p:dej}] });
+    if (p.apres) days.push({ repas:[{p:pdj},{p:dej}] });             // lendemain : retour
   }
-
   const total = days.reduce((s,d)=>s+d.repas.reduce((r,m)=>r+m.p,0),0);
   const count = days.reduce((s,d)=>s+d.repas.length,0);
   return { count, total, desc:`${count} repas` };
@@ -3591,7 +3609,7 @@ function calcPage(ns) {
   const duree = vn(`${ns}-duree`);
 
   // Nuitées auto
-  const nuits = calcNuitsAuto(dist, duree);
+  const nuits = calcNuitsAuto(dist, duree, ns);
   // Trajet : durée réelle en heures pour la maintenance (nouveau modèle horaire), logique classique sinon
   const heuresTrajetAuto = ns === 'maint' ? calcHeuresTrajetMaint(ns, dist) : (calcJoursTrajet(dist) * 8);
   const joursTrajetClassique = calcJoursTrajet(dist); // conservé pour ns !== 'maint' (prix machine, non concerné ici)
@@ -3610,7 +3628,7 @@ function calcPage(ns) {
   const effJoursInterv  = sm.joursinterv ? (isNaN(_smJoursInterv)  ? duree           : _smJoursInterv)  : duree;
 
   // Repas auto = toujours calculé depuis les valeurs 01-02-03, pas depuis les overrides 04
-  const repas     = (dist > 0 || duree > 0) ? calcRepas(dist, duree, nuits) : { count:0, total:0, desc:'0 repas' };
+  const repas     = (dist > 0 || duree > 0) ? calcRepas(dist, duree, nuits, ns) : { count:0, total:0, desc:'0 repas' };
   const anyManual = sm.heurestrajet || sm.joursinterv || sm.nuits || sm.km;
   const effRepasTotal = sm.repas ? (isNaN(_smRepas) ? repas.total : _smRepas)
                       : anyManual ? (parseFloat($(`${ns}-s-repas`) ? $(`${ns}-s-repas`).value : 0) || repas.total)
