@@ -1721,6 +1721,10 @@
        BLOC — ÉQUIPE (source unique : commerciaux + techniciens)
   ══════════════════════════════════════════ -->
   <style>
+    .contrat-chk { display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--text2); cursor:pointer; padding:4px 10px; border:1px solid var(--border2); border-radius:20px; background:var(--bg2); }
+    .contrat-chk input { accent-color:var(--accent); width:14px; height:14px; }
+    .contrat-chk:has(input:checked) { border-color:var(--accent); color:var(--accent); background:rgba(15,158,213,.08); font-weight:600; }
+    .contrat-note { margin:2px 22px 6px; padding:7px 12px; border-radius:8px; background:rgba(15,158,213,.08); color:var(--accent); font-size:12px; }
     .trc { margin-left:auto; margin-right:14px; font:12px 'DM Mono',monospace; color:var(--text3); white-space:nowrap; }
     .trc:empty { display:none; }
     .cr-block { margin:0; padding:12px 22px 14px; background:var(--bg3); border-top:1px dashed var(--border2); font-size:12px; color:var(--text2); }
@@ -2233,7 +2237,9 @@ function buildSimulatorHTML(ns) {
   h +=     "<div id=\"" + n + "-result-rows\">";
 
   // ── FORFAIT DÉPLACEMENT ──
-  h +=     "<div style=\"padding:14px 22px 4px;font-size:11px;font-weight:700;color:var(--accent);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.06em;\">Forfait d&eacute;placement</div>";
+  h +=     "<div style=\"padding:14px 22px 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;\"><span style=\"font-size:11px;font-weight:700;color:var(--accent);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.06em;flex:1;\">Forfait d&eacute;placement</span>"
+  +        "<label class=\"contrat-chk\" title=\"Le déplacement est facturé à son coût réel, sans marge\"><input type=\"checkbox\" id=\"" + n + "-chk-contrat\" onchange=\"calcPage(&apos;" + n + "&apos;)\"> Forfait d&eacute;placement pour contrat maintenance</label></div>";
+  h +=     "<div class=\"contrat-note\" id=\"" + n + "-contrat-note\" style=\"display:none;\">📄 Contrat maintenance : d&eacute;placement factur&eacute; au co&ucirc;t r&eacute;el, sans marge</div>";
 
   // MO trajet — heures éditables (taux horaire fixe)
   h +=     "<div class=\"total-row\"><span class=\"trl\">Main d&apos;&oelig;uvre trajet &mdash; "
@@ -3636,7 +3642,11 @@ function calcPage(ns) {
 
   const cfg = getCfg();
   const ikEffectif = ns === 'maint' ? (cfg.coutKm ?? 0.98) : ik;
-  const transport = effDist * ikEffectif;
+  // Contrat maintenance : déplacement facturé au coût réel du technicien, sans marge
+  const contratMaint = ns === 'maint' && !!($(`${ns}-chk-contrat`) && $(`${ns}-chk-contrat`).checked);
+  const chContrat = contratMaint ? getCoutHoraireCharge(techKey) : 0;
+  const transport = effDist * (contratMaint ? ik : ikEffectif);
+  if ($(`${ns}-contrat-note`)) $(`${ns}-contrat-note`).style.display = contratMaint ? 'block' : 'none';
   const hotel     = effNuits * (vn('cfg-hotel') || 80);
 
   const margePct = 0; // tarifs maintenance déjà au prix de vente
@@ -3649,7 +3659,7 @@ function calcPage(ns) {
     const forfait1j  = cfg.forfaitInterv1j  ?? 784;
     const forfait05j = cfg.forfaitInterv05j ?? 441;
 
-    moTrajetSale  = effHeuresTrajet * tauxHeureTrajet; // déjà un prix de vente
+    moTrajetSale  = effHeuresTrajet * (contratMaint ? chContrat : tauxHeureTrajet); // prix de vente (ou coût chargé en contrat maintenance)
 
     // Forfait déplacement : transport (coût km déjà au prix de vente) + hôtel + repas + MO trajet
     sousTotalDepl = transport + hotel + effRepasTotal;
@@ -3705,8 +3715,13 @@ function calcPage(ns) {
     const n2 = function(x){ return (Math.round(x*100)/100).toLocaleString('fr-FR', {minimumFractionDigits: (Math.round(x*100)%100 ? 2 : 0), maximumFractionDigits: 2}); };
     const tH = cfg.tauxHeureTrajet ?? 76, tK = cfg.coutKm ?? 0.98, tN = vn('cfg-hotel') || 80;
     const setF = function(k, t){ const el = $(`${ns}-f-${k}`); if (el) el.textContent = t; };
+    if (contratMaint) {
+      setF('mo-trajet', !(chContrat > 0) ? '⚠ coût horaire non renseigné' : (coutsUnlocked ? n2(effHeuresTrajet) + ' h × ' + n2(chContrat) + ' €/h (coût) =' : n2(effHeuresTrajet) + ' h au coût ='));
+      setF('transport', coutsUnlocked ? n2(effDist) + ' km × ' + n2(ik) + ' €/km (coût) =' : n2(effDist) + ' km au coût =');
+    } else {
     setF('mo-trajet', n2(effHeuresTrajet) + ' h × ' + n2(tH) + ' €/h =');
     setF('transport', n2(effDist) + ' km × ' + n2(tK) + ' €/km =');
+    }
     setF('hotel', effNuits > 0 ? n2(effNuits) + ' nuit' + (effNuits > 1 ? 's' : '') + ' × ' + n2(tN) + ' € =' : '');
     setF('repas', (!sm.repas && !anyManual && repas.count) ? repas.desc + ' =' : '');
   }
